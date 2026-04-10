@@ -1,0 +1,24 @@
+{
+  "focusAreas": {
+    "Sustainability": "#16A34A",
+    "Governance": "#7C3AED",
+    "Economics": "#0891B2",
+    "Health": "#DC2626",
+    "AI": "#4F46E5",
+    "Education": "#D97706",
+    "Ecology": "#059669",
+    "Social Science": "#DB2777"
+  },
+  "researchers": [
+    { "name": "Johan Rockström", "focusArea": "Sustainability" },
+    { "name": "Kevin Noone", "focusArea": "Sustainability" },
+    { "name": "Patrik Söderholm", "focusArea": "Economics" },
+    { "name": "Carl Folke", "focusArea": "Sustainability" },
+    { "name": "Victor Galaz", "focusArea": "Governance" },
+    { "name": "Beatrice Crona", "focusArea": "Sustainability" },
+    { "name": "Line Gordon", "focusArea": "Sustainability" },
+    { "name": "Henrik Österblom", "focusArea": "Ecology" },
+    { "name": "Maja Schlüter", "focusArea": "Social Science" },
+    { "name": "Thomas Hahn", "focusArea": "Governance" }
+  ]
+}
