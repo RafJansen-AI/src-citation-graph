@@ -1,5 +1,8 @@
 import { useGraphData } from './hooks/useGraphData'
 import { CitationGraph } from './components/CitationGraph'
+import { ClusterPanel } from './components/ClusterPanel'
+import { PathFinder } from './components/PathFinder'
+import { SearchBar } from './components/SearchBar'
 
 export default function App() {
   const { data, loading, error } = useGraphData()
@@ -35,8 +38,13 @@ export default function App() {
           {data.nodes.length} papers · {data.edges.length} citations
         </span>
       </header>
-      <main className="flex-1 relative">
-        <CitationGraph graph={data} focusAreaColors={focusAreaColors} />
+      <PathFinder graph={data} />
+      <SearchBar focusAreas={Object.keys(focusAreaColors)} focusAreaColors={focusAreaColors} />
+      <main className="flex-1 flex min-h-0">
+        <div className="flex-1 relative">
+          <CitationGraph graph={data} focusAreaColors={focusAreaColors} />
+        </div>
+        <ClusterPanel graph={data} />
       </main>
     </div>
   )

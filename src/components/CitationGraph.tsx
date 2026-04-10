@@ -11,16 +11,21 @@ interface Props {
 export function CitationGraph({ graph, focusAreaColors }: Props) {
   const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery } = useAppStore()
 
+  // react-force-graph expects { nodes, links } — we store edges internally
   const filteredGraph = useMemo(() => {
-    if (!searchQuery) return graph
-    const q = searchQuery.toLowerCase()
-    const matched = new Set(
-      graph.nodes
-        .filter(n => n.title.toLowerCase().includes(q) ||
-                     n.authors.some(a => a.name.toLowerCase().includes(q)))
-        .map(n => n.id)
-    )
-    return { ...graph, nodes: graph.nodes.filter(n => matched.has(n.id)) }
+    const nodes = searchQuery
+      ? (() => {
+          const q = searchQuery.toLowerCase()
+          const matched = new Set(
+            graph.nodes
+              .filter(n => n.title.toLowerCase().includes(q) ||
+                           n.authors.some(a => a.name.toLowerCase().includes(q)))
+              .map(n => n.id)
+          )
+          return graph.nodes.filter(n => matched.has(n.id))
+        })()
+      : graph.nodes
+    return { nodes, links: graph.edges }
   }, [graph, searchQuery])
 
   const nodeColor = useCallback((node: any) => {
@@ -43,7 +48,6 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       nodeLabel={nodeLabel}
       nodeRelSize={4}
       linkColor={() => '#374151'}
-      linkOpacity={0.3}
       onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
       backgroundColor="#111827"
     />
