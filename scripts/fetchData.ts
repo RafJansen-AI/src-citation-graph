@@ -1,54 +1,40 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { SemanticScholarClient } from './semanticScholar'
+import { OpenAlexClient, type OAWork } from './openAlex'
 import { buildGraph } from './buildGraph'
 import type { GraphData } from '../src/lib/types'
 
-interface Roster {
-  focusAreas: Record<string, string>
-  researchers: Array<{ name: string; focusArea: string }>
+interface Config {
+  institutionName: string
+  conceptColors: Record<string, string>
 }
 
 async function main() {
-  const client = new SemanticScholarClient(process.env.SEMANTIC_SCHOLAR_API_KEY)
-  const roster: Roster = JSON.parse(readFileSync('data/researchers.json', 'utf-8'))
+  const config: Config = JSON.parse(readFileSync('data/config.json', 'utf-8'))
+  const client = new OpenAlexClient(process.env.OPENALEX_EMAIL)
 
-  console.log(`Fetching ${roster.researchers.length} researchers from Semantic Scholar…`)
+  // Step 1: Resolve institution
+  console.log(`Finding institution: "${config.institutionName}"…`)
+  const institution = await client.findInstitution(config.institutionName)
+  if (!institution) throw new Error(`Institution not found: ${config.institutionName}`)
+  const institutionId = OpenAlexClient.workId(institution.id)
+  console.log(`Found: ${institution.display_name} (${institutionId})`)
 
-  const authorPapers: Record<string, { name: string; focusArea: string; papers: any[] }> = {}
-
-  for (const r of roster.researchers) {
-    console.log(`  [author] ${r.name}`)
-    try {
-      const results = await client.searchAuthor(r.name)
-      if (!results.length) { console.warn(`    no results`); continue }
-      const author = results[0]
-      console.log(`    → ${author.name} (${author.authorId}), ${author.paperCount ?? '?'} papers`)
-      const papers = await client.getAuthorPapers(author.authorId)
-      console.log(`    fetched ${papers.length} papers`)
-      authorPapers[author.authorId] = { name: author.name, focusArea: r.focusArea, papers }
-    } catch (e) {
-      console.error(`    ERROR: ${e}`)
-    }
+  // Step 2: Stream all works from OpenAlex
+  console.log('Fetching works from OpenAlex…')
+  const works: OAWork[] = []
+  for await (const work of client.getInstitutionWorks(institutionId)) {
+    works.push(work)
   }
+  console.log(`Total works: ${works.length}`)
 
-  const allPaperIds = new Set(
-    Object.values(authorPapers).flatMap(a => a.papers.map((p: any) => p.paperId).filter(Boolean))
-  )
-  console.log(`\nTotal SRC papers: ${allPaperIds.size}`)
-  console.log('Fetching citation relationships…')
+  // Step 3: Build graph (citations derived from referenced_works — no extra API calls)
+  const { nodes, edges } = buildGraph(works)
+  console.log(`Graph: ${nodes.length} nodes, ${edges.length} edges`)
 
-  const citations: Record<string, string[]> = {}
-  let i = 0
-  for (const pid of allPaperIds) {
-    i++
-    if (i % 100 === 0) console.log(`  ${i}/${allPaperIds.size}`)
-    try { citations[pid] = await client.getPaperCitingPapers(pid) }
-    catch { citations[pid] = [] }
-  }
-
-  const { nodes, edges } = buildGraph(authorPapers, citations)
-  console.log(`\nGraph: ${nodes.length} nodes, ${edges.length} edges`)
+  // Report discovered focus areas (for config tuning)
+  const areas = new Set(nodes.map(n => n.focusArea))
+  console.log(`Focus areas found: ${[...areas].join(', ')}`)
 
   const graph: GraphData = {
     nodes, edges, clusters: [],

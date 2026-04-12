@@ -1,51 +1,44 @@
 import type { GraphData, Paper, GraphEdge } from '../src/lib/types'
+import { OpenAlexClient, type OAWork } from './openAlex'
 
-interface AuthorEntry {
-  name: string
-  focusArea: string
-  papers: any[]
-}
+export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> {
+  const srcIds = new Set(works.map(w => OpenAlexClient.workId(w.id)))
 
-export function buildGraph(
-  authorPapers: Record<string, AuthorEntry>,
-  citations: Record<string, string[]>,
-): Pick<GraphData, 'nodes' | 'edges'> {
-  const srcIds = new Set<string>()
-  const paperMap = new Map<string, Paper>()
-
-  for (const authorData of Object.values(authorPapers)) {
-    for (const raw of authorData.papers) {
-      if (!raw.paperId) continue
-      srcIds.add(raw.paperId)
-      if (paperMap.has(raw.paperId)) continue
-      paperMap.set(raw.paperId, {
-        id: raw.paperId,
-        title: raw.title ?? 'Untitled',
-        year: raw.year ?? 0,
-        authors: (raw.authors ?? []).map((a: any) => ({ authorId: a.authorId, name: a.name })),
-        focusArea: authorData.focusArea,
-        tldr: raw.tldr?.text ?? '',
-        clusterId: -1,
-        citationCount: raw.citationCount ?? 0,
-        externalUrl: raw.externalIds?.DOI
-          ? `https://doi.org/${raw.externalIds.DOI}`
-          : `https://www.semanticscholar.org/paper/${raw.paperId}`,
-      })
+  const nodes: Paper[] = works.map(w => {
+    const id = OpenAlexClient.workId(w.id)
+    const doi = w.ids?.doi?.replace('https://doi.org/', '')
+    return {
+      id,
+      title: w.title ?? 'Untitled',
+      year: w.publication_year ?? 0,
+      authors: (w.authorships ?? []).map(a => ({
+        authorId: OpenAlexClient.workId(a.author.id),
+        name: a.author.display_name,
+      })),
+      focusArea: OpenAlexClient.topConcept(w.concepts ?? []),
+      tldr: OpenAlexClient.reconstructAbstract(w.abstract_inverted_index).slice(0, 400),
+      clusterId: -1,
+      citationCount: w.cited_by_count ?? 0,
+      externalUrl: doi
+        ? `https://doi.org/${doi}`
+        : `https://openalex.org/${id}`,
     }
-  }
+  })
 
   const seen = new Set<string>()
   const edges: GraphEdge[] = []
-  for (const [src, targets] of Object.entries(citations)) {
-    if (!srcIds.has(src)) continue
-    for (const tgt of targets) {
-      if (!srcIds.has(tgt)) continue
-      const key = `${src}:${tgt}`
+
+  for (const w of works) {
+    const srcId = OpenAlexClient.workId(w.id)
+    for (const ref of w.referenced_works ?? []) {
+      const tgtId = OpenAlexClient.workId(ref)
+      if (!srcIds.has(tgtId)) continue
+      const key = `${srcId}:${tgtId}`
       if (seen.has(key)) continue
       seen.add(key)
-      edges.push({ source: src, target: tgt, weight: 1 })
+      edges.push({ source: srcId, target: tgtId, weight: 1 })
     }
   }
 
-  return { nodes: Array.from(paperMap.values()), edges }
+  return { nodes, edges }
 }

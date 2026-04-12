@@ -1,49 +1,71 @@
 import { describe, it, expect } from 'vitest'
 import { buildGraph } from '../../scripts/buildGraph'
+import type { OAWork } from '../../scripts/openAlex'
 
-const authorPapers = {
-  'author1': {
-    name: 'Alice', focusArea: 'AI',
-    papers: [
-      { paperId: 'p1', title: 'Paper 1', year: 2020, tldr: { text: 'AI paper' },
-        authors: [{ authorId: 'author1', name: 'Alice' }], citationCount: 5 },
-      { paperId: 'p2', title: 'Paper 2', year: 2021, tldr: null,
-        authors: [{ authorId: 'author1', name: 'Alice' }], citationCount: 2 },
-    ],
-  },
-  'author2': {
-    name: 'Bob', focusArea: 'Sustainability',
-    papers: [
-      { paperId: 'p3', title: 'Paper 3', year: 2022, tldr: { text: 'Eco paper' },
-        authors: [{ authorId: 'author2', name: 'Bob' }], citationCount: 1 },
-    ],
-  },
-}
-
-const citations: Record<string, string[]> = { p1: ['p3'], p2: ['p1'], p3: [] }
+const makeWork = (id: string, overrides: Partial<OAWork> = {}): OAWork => ({
+  id: `https://openalex.org/${id}`,
+  title: `Title of ${id}`,
+  publication_year: 2020,
+  authorships: [{ author: { id: 'https://openalex.org/A1', display_name: 'Alice' } }],
+  abstract_inverted_index: { 'test': [0], 'abstract': [1] },
+  concepts: [{ display_name: 'Environmental science', level: 0, score: 0.9 }],
+  cited_by_count: 5,
+  ids: { doi: `10.1000/${id}` },
+  referenced_works: [],
+  ...overrides,
+})
 
 describe('buildGraph', () => {
-  it('creates one node per unique SRC paper', () => {
-    const { nodes } = buildGraph(authorPapers, citations)
-    expect(nodes).toHaveLength(3)
-    expect(nodes.map(n => n.id)).toContain('p1')
+  it('creates one node per work', () => {
+    const works = [makeWork('W1'), makeWork('W2')]
+    const { nodes } = buildGraph(works)
+    expect(nodes).toHaveLength(2)
+    expect(nodes.map(n => n.id)).toContain('W1')
+    expect(nodes.map(n => n.id)).toContain('W2')
   })
 
-  it('only includes edges between SRC papers', () => {
-    const { edges } = buildGraph(authorPapers, citations)
-    expect(edges).toContainEqual({ source: 'p1', target: 'p3', weight: 1 })
-    expect(edges).toContainEqual({ source: 'p2', target: 'p1', weight: 1 })
-    expect(edges).toHaveLength(2)
+  it('creates edges from referenced_works when both papers are SRC papers', () => {
+    const works = [
+      makeWork('W1', { referenced_works: ['https://openalex.org/W2'] }),
+      makeWork('W2'),
+    ]
+    const { edges } = buildGraph(works)
+    expect(edges).toContainEqual({ source: 'W1', target: 'W2', weight: 1 })
+    expect(edges).toHaveLength(1)
   })
 
-  it('inherits focusArea from the authoring researcher', () => {
-    const { nodes } = buildGraph(authorPapers, citations)
-    expect(nodes.find(n => n.id === 'p1')?.focusArea).toBe('AI')
-    expect(nodes.find(n => n.id === 'p3')?.focusArea).toBe('Sustainability')
+  it('ignores references to papers not in the SRC set', () => {
+    const works = [
+      makeWork('W1', { referenced_works: ['https://openalex.org/W99'] }),
+    ]
+    const { edges } = buildGraph(works)
+    expect(edges).toHaveLength(0)
   })
 
-  it('uses empty string tldr when tldr is null', () => {
-    const { nodes } = buildGraph(authorPapers, citations)
-    expect(nodes.find(n => n.id === 'p2')?.tldr).toBe('')
+  it('sets focusArea from top level-0 concept', () => {
+    const works = [makeWork('W1')]
+    const { nodes } = buildGraph(works)
+    expect(nodes[0].focusArea).toBe('Environmental science')
+  })
+
+  it('uses reconstructed abstract as tldr', () => {
+    const works = [makeWork('W1')]
+    const { nodes } = buildGraph(works)
+    expect(nodes[0].tldr).toBe('test abstract')
+  })
+
+  it('falls back to "Other" when no level-0 concepts', () => {
+    const works = [makeWork('W1', { concepts: [{ display_name: 'Ecology', level: 1, score: 0.9 }] })]
+    const { nodes } = buildGraph(works)
+    expect(nodes[0].focusArea).toBe('Other')
+  })
+
+  it('does not create duplicate edges', () => {
+    const works = [
+      makeWork('W1', { referenced_works: ['https://openalex.org/W2', 'https://openalex.org/W2'] }),
+      makeWork('W2'),
+    ]
+    const { edges } = buildGraph(works)
+    expect(edges).toHaveLength(1)
   })
 })

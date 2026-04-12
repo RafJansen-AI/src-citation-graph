@@ -21,11 +21,12 @@ npm install
 cp .env.example .env    # add ANTHROPIC_API_KEY; SEMANTIC_SCHOLAR_API_KEY is optional
 ```
 
-### Populate researcher roster
+### Configure institution
 
-Edit `data/researchers.json` with SRC's full staff list. The `focusArea` field must
-match a key in the `focusAreas` color map at the top of that file. The current file
-has 10 representative entries — replace with the full ~160 researchers.
+Edit `data/config.json` — set `institutionName` to exactly match OpenAlex's name for the
+institution (default: `"Stockholm Resilience Centre"`). The `conceptColors` map controls
+node colors by OpenAlex concept. No researcher list needed — all authors and papers are
+discovered automatically.
 
 ### Run the data pipeline
 
@@ -33,16 +34,17 @@ has 10 representative entries — replace with the full ~160 researchers.
 npm run pipeline
 ```
 
-This runs three stages in sequence (~2-4 hours for 160 researchers at the free API rate;
-~20 minutes with a Semantic Scholar API key):
+This runs three stages in sequence. The fetch stage uses OpenAlex (free, no key needed)
+and typically completes in **5-15 minutes** depending on publication count:
 
 ```bash
-npm run fetch-data         # fetches papers + citations → public/data/graph.json
-npm run detect-clusters    # detects research clusters via community detection
+npm run fetch-data         # OpenAlex: auto-discovers institution works + builds citation graph
+npm run detect-clusters    # community detection → assigns cluster IDs + concept-derived colors
 npm run summarize-clusters # calls Claude API to write cluster narrative summaries
 ```
 
 The pipeline is resumable — `summarize-clusters` skips clusters already summarized.
+Add `OPENALEX_EMAIL` to `.env` for polite-pool access (higher rate limits, optional).
 
 ### Start dev server
 
@@ -76,9 +78,9 @@ Commit the refreshed `public/data/graph.json` to deploy the update.
 
 ```
 scripts/
-  fetchData.ts          # orchestrates Semantic Scholar API fetch
-  semanticScholar.ts    # typed API client with rate limiting
-  buildGraph.ts         # constructs graph JSON from raw API data
+  fetchData.ts          # orchestrates OpenAlex fetch (institution → works → graph.json)
+  openAlex.ts           # typed OpenAlex API client with cursor pagination
+  buildGraph.ts         # constructs graph JSON from OpenAlex work objects
   detectClusters.ts     # Louvain community detection
   summarizeClusters.ts  # Claude API cluster summaries
 
@@ -95,7 +97,7 @@ src/
     SearchBar.tsx       # filter + legend
 
 data/
-  researchers.json      # SRC researcher roster (committed)
+  config.json           # institution name + concept→color map (committed)
 
 public/data/
   graph.json            # pipeline output (gitignored, ~10MB)

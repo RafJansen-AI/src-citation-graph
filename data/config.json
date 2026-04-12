@@ -1,0 +1,16 @@
+{
+  "institutionName": "Stockholm Resilience Centre",
+  "conceptColors": {
+    "Environmental science": "#16A34A",
+    "Ecology": "#059669",
+    "Political science": "#7C3AED",
+    "Economics": "#0891B2",
+    "Sociology": "#DB2777",
+    "Geography": "#D97706",
+    "Biology": "#4F46E5",
+    "Medicine": "#DC2626",
+    "Computer science": "#6366F1",
+    "Psychology": "#F59E0B",
+    "Other": "#6B7280"
+  }
+}
