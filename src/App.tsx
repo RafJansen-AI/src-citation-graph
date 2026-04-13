@@ -1,7 +1,7 @@
 import { useGraphData } from './hooks/useGraphData'
 import { CitationGraph } from './components/CitationGraph'
 import { ClusterPanel } from './components/ClusterPanel'
-import { PathFinder } from './components/PathFinder'
+import { ResearcherSearch } from './components/ResearcherSearch'
 import { SearchBar } from './components/SearchBar'
 import { resolveConceptColor, SRC_CONCEPTS } from './lib/conceptColors'
 
@@ -47,7 +47,7 @@ export default function App() {
           {data.nodes.length} papers · {data.edges.length} citations
         </span>
       </header>
-      <PathFinder graph={data} />
+      <ResearcherSearch graph={data} />
       <SearchBar focusAreas={legendAreas} focusAreaColors={focusAreaColors} />
       <main className="flex-1 flex min-h-0">
         <div className="flex-1 relative">
