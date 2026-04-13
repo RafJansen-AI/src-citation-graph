@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import type { GraphData } from '../lib/types'
+import { sharedPapers } from '../lib/coauthorGraph'
 
 const aside = "w-80 shrink-0 border-l p-4 overflow-y-auto"
 const asideStyle = { background: 'var(--bg-surface)', borderColor: 'var(--border)' }
@@ -11,7 +12,72 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     selectedPaper, selectedCluster, selectedAuthorId,
     setSelectedPaper, setSelectedCluster, setSelectedAuthorId,
     hiddenClusterIds, toggleClusterVisibility,
+    coauthorPath, coauthorNoPath, setCoauthorPath, setCoauthorNoPath,
   } = useAppStore()
+
+  // Co-authorship path view
+  if (coauthorPath.length > 0 || coauthorNoPath) {
+    const authorNames = new Map<string, string>()
+    for (const node of graph.nodes) {
+      for (const a of node.authors) authorNames.set(a.authorId, a.name)
+    }
+
+    function closePath() {
+      setCoauthorPath([])
+      setCoauthorNoPath(false)
+    }
+
+    return (
+      <aside className={aside} style={asideStyle}>
+        <button onClick={closePath} className={backBtn} style={backBtnStyle}>← Back</button>
+        <h2 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>Connection path</h2>
+        {coauthorNoPath ? (
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No co-authorship connection found.</p>
+        ) : (
+          <>
+            <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
+              {coauthorPath.length - 1} degree{coauthorPath.length !== 2 ? 's' : ''} of separation
+            </p>
+            <ol className="space-y-4">
+              {coauthorPath.map((authorId, i) => {
+                const name = authorNames.get(authorId) ?? authorId
+                const nextId = coauthorPath[i + 1]
+                const shared = nextId ? sharedPapers(graph.nodes, authorId, nextId) : []
+                return (
+                  <li key={authorId}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
+                        {i + 1}
+                      </span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{name}</span>
+                    </div>
+                    {shared.length > 0 && (
+                      <ul className="mt-1 ml-7 space-y-0.5">
+                        {shared.map(p => (
+                          <li key={p.id}
+                              onClick={() => setSelectedPaper(p)}
+                              className="text-xs cursor-pointer hover:underline truncate"
+                              style={{ color: 'var(--text-secondary)' }}>
+                            {p.title} ({p.year})
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {nextId && (
+                      <div className="ml-7 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        ↓ co-authored with {authorNames.get(nextId) ?? nextId}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+          </>
+        )}
+      </aside>
+    )
+  }
 
   if (selectedPaper) return (
     <aside className={aside} style={asideStyle}>

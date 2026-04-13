@@ -71,4 +71,29 @@ describe('ResearcherSearch', () => {
     await user.click(screen.getByRole('button', { name: '×' }))
     expect(useAppStore.getState().selectedAuthorId).toBeNull()
   })
+
+  it('shows Connect-to input after a researcher is selected', async () => {
+    const user = userEvent.setup()
+    render(<ResearcherSearch graph={mockGraph} />)
+    await user.type(screen.getByPlaceholderText('Search researcher…'), 'Jo')
+    await user.click(screen.getByText('Johan Rockström'))
+    expect(screen.getByPlaceholderText('Connect to…')).toBeInTheDocument()
+  })
+
+  it('shows Connect button when two authors are selected and sets coauthorNoPath when no path exists', async () => {
+    const user = userEvent.setup()
+    render(<ResearcherSearch graph={mockGraph} />)
+    // Select first author
+    await user.type(screen.getByPlaceholderText('Search researcher…'), 'Jo')
+    await user.click(screen.getByText('Johan Rockström'))
+    // Select second author (not a co-author of Johan in mockGraph)
+    await user.type(screen.getByPlaceholderText('Connect to…'), 'Ca')
+    await user.click(screen.getByText('Carl Folke'))
+    // Connect button should appear
+    const connectBtn = screen.getByRole('button', { name: /connect/i })
+    expect(connectBtn).toBeInTheDocument()
+    await user.click(connectBtn)
+    // No co-authorship path exists between A1 and A2 in mockGraph
+    expect(useAppStore.getState().coauthorNoPath).toBe(true)
+  })
 })
