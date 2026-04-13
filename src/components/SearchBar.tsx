@@ -16,18 +16,21 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
   }, [localQuery, setSearchQuery])
 
   return (
-    <div className="flex items-center gap-4 px-4 py-2 border-b border-gray-700 bg-gray-800 flex-wrap">
+    <div className="flex items-center gap-4 px-4 py-2 border-b flex-wrap"
+         style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
       <input
         value={localQuery}
         onChange={e => setLocalQuery(e.target.value)}
         placeholder="Filter papers or authors…"
-        className="bg-gray-700 text-white text-sm px-3 py-1 rounded border border-gray-600 w-56"
+        className="text-sm px-3 py-1 rounded border w-56"
+        style={{ background: 'var(--input-bg)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
       />
-      <label className="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer select-none">
+      <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+             style={{ color: 'var(--text-secondary)' }}>
         <input type="checkbox" checked={sizeByCitations} onChange={toggleSizeByCitations} />
         Size by citations
       </label>
-      <label className="flex items-center gap-2 text-xs text-gray-300">
+      <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
         Min citations: {minCitations}
         <input
           type="range" min={0} max={200} step={10}
@@ -38,7 +41,7 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
       </label>
       <div className="flex flex-wrap gap-3">
         {focusAreas.map(area => (
-          <span key={area} className="flex items-center gap-1 text-xs text-gray-300">
+          <span key={area} className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             <span
               className="w-2 h-2 rounded-full inline-block"
               style={{ backgroundColor: focusAreaColors[area] }}

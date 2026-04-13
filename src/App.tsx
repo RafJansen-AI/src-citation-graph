@@ -4,21 +4,25 @@ import { ClusterPanel } from './components/ClusterPanel'
 import { ResearcherSearch } from './components/ResearcherSearch'
 import { SearchBar } from './components/SearchBar'
 import { resolveConceptColor, SRC_CONCEPTS } from './lib/conceptColors'
+import { useAppStore } from './store/appStore'
 
 export default function App() {
   const { data, loading, error } = useGraphData()
+  const { theme, toggleTheme } = useAppStore()
 
   if (loading) return (
-    <div className="flex items-center justify-center h-screen bg-gray-900 text-white text-sm">
+    <div data-theme={theme} className="flex items-center justify-center h-screen text-sm"
+         style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       Loading citation network…
     </div>
   )
 
   if (error || !data) return (
-    <div className="flex items-center justify-center h-screen bg-gray-900 text-red-400 text-sm">
+    <div data-theme={theme} className="flex items-center justify-center h-screen text-sm"
+         style={{ background: 'var(--bg-base)', color: '#F87171' }}>
       <span>
-        Error loading graph. Run <code className="mx-1 px-1 bg-gray-800 rounded">npm run pipeline</code> first.
-        {error && <span className="ml-2 text-gray-500">({error.message})</span>}
+        Error loading graph. Run <code className="mx-1 px-1 rounded" style={{ background: 'var(--bg-elevated)' }}>npm run pipeline</code> first.
+        {error && <span className="ml-2" style={{ color: 'var(--text-muted)' }}>({error.message})</span>}
       </span>
     </div>
   )
@@ -40,12 +44,22 @@ export default function App() {
   if ([...allAreas].some(a => !SRC_CONCEPTS.has(a))) legendAreas.push('Other')
 
   return (
-    <div className="h-screen bg-gray-900 text-white flex flex-col">
-      <header className="px-4 py-2 border-b border-gray-700 flex items-center gap-4">
+    <div data-theme={theme} className="h-screen flex flex-col"
+         style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <header className="px-4 py-2 flex items-center gap-4 border-b"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
         <h1 className="font-bold text-lg">SRC Citation Graph</h1>
-        <span className="text-sm text-gray-400">
+        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
           {data.nodes.length} papers · {data.edges.length} citations
         </span>
+        <button
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          className="ml-auto text-xs px-2 py-1 rounded border cursor-pointer"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--bg-elevated)' }}
+        >
+          {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+        </button>
       </header>
       <ResearcherSearch graph={data} />
       <SearchBar focusAreas={legendAreas} focusAreaColors={focusAreaColors} />
