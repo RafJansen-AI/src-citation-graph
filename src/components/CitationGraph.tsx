@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations } = useAppStore()
+  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, selectedFocusAreas } = useAppStore()
   const fgRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -68,12 +68,18 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       nodes = nodes.filter(n => (n.citationCount ?? 0) >= minCitations)
     }
 
+    // Focus area filter (multi-select)
+    if (selectedFocusAreas.length > 0) {
+      const areaSet = new Set(selectedFocusAreas)
+      nodes = nodes.filter(n => areaSet.has(n.focusArea))
+    }
+
     const nodeIds = new Set(nodes.map(n => n.id))
     const links = graph.edges.filter(
       e => nodeIds.has(resolveId(e.source)) && nodeIds.has(resolveId(e.target))
     )
     return { nodes, links }
-  }, [graph, searchQuery, hiddenClusterIds, minCitations])
+  }, [graph, searchQuery, hiddenClusterIds, minCitations, selectedFocusAreas])
 
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
