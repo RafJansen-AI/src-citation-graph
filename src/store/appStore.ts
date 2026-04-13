@@ -11,6 +11,7 @@ interface AppState {
   sizeByCitations: boolean
   theme: 'dark' | 'light'
   minCitations: number
+  yearRange: [number, number]
   coauthorPath: string[]
   coauthorNoPath: boolean
   selectedFocusAreas: string[]
@@ -25,6 +26,7 @@ interface AppState {
   toggleSizeByCitations: () => void
   toggleTheme: () => void
   setMinCitations: (n: number) => void
+  setYearRange: (range: [number, number]) => void
   setCoauthorPath: (path: string[]) => void
   setCoauthorNoPath: (v: boolean) => void
   toggleFocusArea: (area: string) => void
@@ -41,6 +43,7 @@ export const useAppStore = create<AppState>(set => ({
   sizeByCitations: false,
   theme: 'dark',
   minCitations: 0,
+  yearRange: [1973, 2026],
   coauthorPath: [],
   coauthorNoPath: false,
   selectedFocusAreas: [],
@@ -59,6 +62,7 @@ export const useAppStore = create<AppState>(set => ({
   toggleSizeByCitations: () => set(s => ({ sizeByCitations: !s.sizeByCitations })),
   toggleTheme: () => set(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
   setMinCitations: n => set({ minCitations: n }),
+  setYearRange: range => set({ yearRange: range }),
   setCoauthorPath: path => set({ coauthorPath: path }),
   setCoauthorNoPath: v => set({ coauthorNoPath: v }),
   toggleFocusArea: area =>

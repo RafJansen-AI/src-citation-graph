@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, selectedFocusAreas } = useAppStore()
+  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas } = useAppStore()
   const fgRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -74,6 +74,11 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       nodes = nodes.filter(n => (n.citationCount ?? 0) >= minCitations)
     }
 
+    // Year range filter
+    if (yearRange[0] > 1973 || yearRange[1] < 2026) {
+      nodes = nodes.filter(n => n.year >= yearRange[0] && n.year <= yearRange[1])
+    }
+
     // SRC theme filter (multi-select) — keyed by clusterId, not focusArea
     if (selectedFocusAreas.length > 0) {
       const selectedThemes = new Set(selectedFocusAreas)
@@ -85,7 +90,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       e => nodeIds.has(resolveId(e.source)) && nodeIds.has(resolveId(e.target))
     )
     return { nodes, links }
-  }, [graph, searchQuery, hiddenClusterIds, minCitations, selectedFocusAreas, clusterThemeMap])
+  }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas, clusterThemeMap])
 
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper

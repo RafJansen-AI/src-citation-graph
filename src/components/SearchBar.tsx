@@ -11,8 +11,12 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
     setSearchQuery,
     sizeByCitations, toggleSizeByCitations,
     minCitations, setMinCitations,
+    yearRange, setYearRange,
     selectedFocusAreas, toggleFocusArea, clearFocusAreas,
   } = useAppStore()
+
+  const MIN_YEAR = 1973
+  const MAX_YEAR = 2026
   const [localQuery, setLocalQuery] = useState('')
 
   useEffect(() => {
@@ -42,6 +46,21 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
           value={minCitations}
           onChange={e => setMinCitations(Number(e.target.value))}
           className="w-24"
+        />
+      </label>
+      <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        Years: {yearRange[0]}–{yearRange[1]}
+        <input
+          type="range" min={MIN_YEAR} max={MAX_YEAR} step={1}
+          value={yearRange[0]}
+          onChange={e => setYearRange([Math.min(Number(e.target.value), yearRange[1]), yearRange[1]])}
+          className="w-20"
+        />
+        <input
+          type="range" min={MIN_YEAR} max={MAX_YEAR} step={1}
+          value={yearRange[1]}
+          onChange={e => setYearRange([yearRange[0], Math.max(Number(e.target.value), yearRange[0])])}
+          className="w-20"
         />
       </label>
       <div className="flex flex-wrap gap-2 items-center">
