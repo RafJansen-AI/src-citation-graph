@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { SearchBar } from '../../src/components/SearchBar'
 import { useAppStore } from '../../src/store/appStore'
 
-afterEach(() => { useAppStore.setState({ searchQuery: '' }) })
+afterEach(() => { useAppStore.setState({ searchQuery: '', selectedFocusAreas: [] }) })
 
 describe('SearchBar', () => {
   it('does not update the store synchronously on every keystroke', async () => {
@@ -32,5 +32,26 @@ describe('SearchBar', () => {
     )
     expect(screen.getByText('Environmental science')).toBeInTheDocument()
     expect(screen.getByText('Other')).toBeInTheDocument()
+  })
+})
+
+describe('SearchBar — focus area store actions', () => {
+  afterEach(() => useAppStore.setState({ selectedFocusAreas: [] }))
+
+  it('toggleFocusArea adds an area', () => {
+    useAppStore.getState().toggleFocusArea('Biology')
+    expect(useAppStore.getState().selectedFocusAreas).toContain('Biology')
+  })
+
+  it('toggleFocusArea removes an already-selected area', () => {
+    useAppStore.setState({ selectedFocusAreas: ['Biology'] })
+    useAppStore.getState().toggleFocusArea('Biology')
+    expect(useAppStore.getState().selectedFocusAreas).not.toContain('Biology')
+  })
+
+  it('clearFocusAreas empties the selection', () => {
+    useAppStore.setState({ selectedFocusAreas: ['Biology', 'Medicine'] })
+    useAppStore.getState().clearFocusAreas()
+    expect(useAppStore.getState().selectedFocusAreas).toHaveLength(0)
   })
 })

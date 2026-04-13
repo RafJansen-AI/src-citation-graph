@@ -13,6 +13,7 @@ interface AppState {
   minCitations: number
   coauthorPath: string[]
   coauthorNoPath: boolean
+  selectedFocusAreas: string[]
 
   setSelectedPaper: (p: Paper | null) => void
   setSelectedCluster: (c: Cluster | null) => void
@@ -26,6 +27,8 @@ interface AppState {
   setMinCitations: (n: number) => void
   setCoauthorPath: (path: string[]) => void
   setCoauthorNoPath: (v: boolean) => void
+  toggleFocusArea: (area: string) => void
+  clearFocusAreas: () => void
 }
 
 export const useAppStore = create<AppState>(set => ({
@@ -40,6 +43,7 @@ export const useAppStore = create<AppState>(set => ({
   minCitations: 0,
   coauthorPath: [],
   coauthorNoPath: false,
+  selectedFocusAreas: [],
 
   setSelectedPaper: p => set({ selectedPaper: p }),
   setSelectedCluster: c => set({ selectedCluster: c }),
@@ -57,4 +61,11 @@ export const useAppStore = create<AppState>(set => ({
   setMinCitations: n => set({ minCitations: n }),
   setCoauthorPath: path => set({ coauthorPath: path }),
   setCoauthorNoPath: v => set({ coauthorNoPath: v }),
+  toggleFocusArea: area =>
+    set(s => ({
+      selectedFocusAreas: s.selectedFocusAreas.includes(area)
+        ? s.selectedFocusAreas.filter(a => a !== area)
+        : [...s.selectedFocusAreas, area],
+    })),
+  clearFocusAreas: () => set({ selectedFocusAreas: [] }),
 }))
