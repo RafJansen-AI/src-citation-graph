@@ -3,6 +3,7 @@ import { CitationGraph } from './components/CitationGraph'
 import { ClusterPanel } from './components/ClusterPanel'
 import { PathFinder } from './components/PathFinder'
 import { SearchBar } from './components/SearchBar'
+import { resolveConceptColor, SRC_CONCEPTS } from './lib/conceptColors'
 
 export default function App() {
   const { data, loading, error } = useGraphData()
@@ -22,13 +23,21 @@ export default function App() {
     </div>
   )
 
-  const focusAreaColors: Record<string, string> = {}
-  data.nodes.forEach(n => { if (!focusAreaColors[n.focusArea]) focusAreaColors[n.focusArea] = '#6B7280' })
+  const configColors: Record<string, string> = { 'Other': '#6B7280' }
   data.clusters.forEach(c => {
-    data.nodes.filter(n => c.paperIds.includes(n.id)).forEach(n => {
-      focusAreaColors[n.focusArea] = c.color
-    })
+    const base = c.label.replace(/ \(\d+\)$/, '')
+    if (!configColors[base]) configColors[base] = c.color
   })
+
+  const focusAreaColors: Record<string, string> = {}
+  const allAreas = new Set(data.nodes.map(n => n.focusArea))
+  allAreas.forEach(area => {
+    focusAreaColors[area] = resolveConceptColor(area, configColors)
+  })
+  focusAreaColors['Other'] = '#6B7280'
+
+  const legendAreas = [...allAreas].filter(a => SRC_CONCEPTS.has(a)).sort()
+  if ([...allAreas].some(a => !SRC_CONCEPTS.has(a))) legendAreas.push('Other')
 
   return (
     <div className="h-screen bg-gray-900 text-white flex flex-col">
@@ -39,7 +48,7 @@ export default function App() {
         </span>
       </header>
       <PathFinder graph={data} />
-      <SearchBar focusAreas={Object.keys(focusAreaColors)} focusAreaColors={focusAreaColors} />
+      <SearchBar focusAreas={legendAreas} focusAreaColors={focusAreaColors} />
       <main className="flex-1 flex min-h-0">
         <div className="flex-1 relative">
           <CitationGraph graph={data} focusAreaColors={focusAreaColors} />
