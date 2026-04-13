@@ -28,21 +28,36 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
   }
 
   // Paper detail takes highest priority (direct user click on a node)
-  if (selectedPaper) return (
-    <aside className={aside} style={asideStyle}>
-      <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
-      <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
-      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {CLUSTER_LABEL_TO_THEME[selectedPaper.focusArea] ?? selectedPaper.focusArea}</p>
-      {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
-      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Citations: {selectedPaper.citationCount ?? 0}</p>
-      {selectedPaper.externalUrl && (
-        <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
-           className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
-          View on OpenAlex →
-        </a>
-      )}
-    </aside>
-  )
+  if (selectedPaper) {
+    const citesCount = graph.edges.filter(e => {
+      const src = typeof e.source === 'string' ? e.source : (e.source as any).id
+      return src === selectedPaper.id
+    }).length
+    const citedByCount = graph.edges.filter(e => {
+      const tgt = typeof e.target === 'string' ? e.target : (e.target as any).id
+      return tgt === selectedPaper.id
+    }).length
+
+    return (
+      <aside className={aside} style={asideStyle}>
+        <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
+        <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
+        <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {CLUSTER_LABEL_TO_THEME[selectedPaper.focusArea] ?? selectedPaper.focusArea}</p>
+        {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
+        <div className="flex gap-3 mb-2 text-xs">
+          <span style={{ color: '#60A5FA' }}>→ Cites {citesCount}</span>
+          <span style={{ color: '#FB923C' }}>← Cited by {citedByCount}</span>
+        </div>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Total citations: {selectedPaper.citationCount ?? 0}</p>
+        {selectedPaper.externalUrl && (
+          <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
+             className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
+            View on OpenAlex →
+          </a>
+        )}
+      </aside>
+    )
+  }
 
   // Co-authorship path view
   if (coauthorPath.length > 0 || coauthorNoPath) {

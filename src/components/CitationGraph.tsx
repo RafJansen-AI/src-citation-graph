@@ -5,9 +5,11 @@ import { useAppStore } from '../store/appStore'
 import { buildClusterThemeMap } from '../lib/srcThemes'
 
 const DIMMED = '#1F2937'
-const EDGE_HIGHLIGHT = '#9CA3AF'
 const EDGE_DIM = '#1F2937'
 const EDGE_DEFAULT = '#4B5563'
+// Blue = papers this paper cites (outgoing); orange = papers that cite this paper (incoming)
+const COLOR_CITES = '#60A5FA'
+const COLOR_CITED_BY = '#FB923C'
 
 function resolveId(n: unknown): string {
   if (typeof n === 'string') return n
@@ -97,18 +99,23 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas, clusterThemeMap])
 
-  // Neighbor sets for selected-paper connection highlighting
-  const { neighborIds, neighborEdgeKeys } = useMemo(() => {
-    if (!selectedPaper) return { neighborIds: new Set<string>(), neighborEdgeKeys: new Set<string>() }
-    const neighborIds = new Set<string>()
+  // Directional neighbor sets for selected-paper highlighting
+  // citesIds: papers the selected paper cites (outgoing edges from selected)
+  // citedByIds: papers that cite the selected paper (incoming edges to selected)
+  const { citesIds, citedByIds, neighborEdgeKeys } = useMemo(() => {
+    if (!selectedPaper) return {
+      citesIds: new Set<string>(), citedByIds: new Set<string>(), neighborEdgeKeys: new Set<string>(),
+    }
+    const citesIds = new Set<string>()
+    const citedByIds = new Set<string>()
     const neighborEdgeKeys = new Set<string>()
     for (const link of filteredGraph.links) {
       const src = resolveId(link.source)
       const tgt = resolveId(link.target)
-      if (src === selectedPaper.id) { neighborIds.add(tgt); neighborEdgeKeys.add(`${src}|${tgt}`) }
-      if (tgt === selectedPaper.id) { neighborIds.add(src); neighborEdgeKeys.add(`${tgt}|${src}`) }
+      if (src === selectedPaper.id) { citesIds.add(tgt); neighborEdgeKeys.add(`${src}|${tgt}`) }
+      if (tgt === selectedPaper.id) { citedByIds.add(src); neighborEdgeKeys.add(`${tgt}|${src}`) }
     }
-    return { neighborIds, neighborEdgeKeys }
+    return { citesIds, citedByIds, neighborEdgeKeys }
   }, [selectedPaper, filteredGraph.links])
 
   const nodeColor = useCallback((node: any) => {
@@ -116,9 +123,11 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     if (highlightedPath.includes(p.id)) return '#FBBF24'
     const theme = clusterThemeMap.get(p.clusterId) ?? 'Other'
     const themeColor = focusAreaColors[theme] ?? '#6B7280'
-    // Selected-paper connection highlight: dim everything except the paper itself and its neighbours
+    // Selected-paper: colour by citation direction; dim everything else
     if (selectedPaper) {
-      if (p.id === selectedPaper.id || neighborIds.has(p.id)) return themeColor
+      if (p.id === selectedPaper.id) return '#FFFFFF'
+      if (citesIds.has(p.id)) return COLOR_CITES       // papers this paper cites → blue
+      if (citedByIds.has(p.id)) return COLOR_CITED_BY  // papers that cite this paper → orange
       return DIMMED
     }
     // selectedAuthorId stores the author's name (OpenAlex gives same person multiple IDs)
@@ -127,7 +136,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     }
     if (selectedCluster && !selectedCluster.paperIds.includes(p.id)) return '#374151'
     return themeColor
-  }, [highlightedPath, selectedPaper, neighborIds, selectedAuthorId, selectedCluster, focusAreaColors, clusterThemeMap])
+  }, [highlightedPath, selectedPaper, citesIds, citedByIds, selectedAuthorId, selectedCluster, focusAreaColors, clusterThemeMap])
 
   const nodeLabel = useCallback((node: any) => {
     const p = node as Paper
@@ -157,15 +166,31 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
           nodeVal={nodeVal}
           linkColor={(link: any) => {
             if (!selectedPaper) return EDGE_DEFAULT
-            const key = `${resolveId(link.source)}|${resolveId(link.target)}`
-            const keyRev = `${resolveId(link.target)}|${resolveId(link.source)}`
-            return (neighborEdgeKeys.has(key) || neighborEdgeKeys.has(keyRev)) ? EDGE_HIGHLIGHT : EDGE_DIM
+            const src = resolveId(link.source)
+            const tgt = resolveId(link.target)
+            if (src === selectedPaper.id) return COLOR_CITES      // outgoing: blue
+            if (tgt === selectedPaper.id) return COLOR_CITED_BY   // incoming: orange
+            return EDGE_DIM
           }}
           linkWidth={(link: any) => {
             if (!selectedPaper) return 1
             const key = `${resolveId(link.source)}|${resolveId(link.target)}`
             const keyRev = `${resolveId(link.target)}|${resolveId(link.source)}`
             return (neighborEdgeKeys.has(key) || neighborEdgeKeys.has(keyRev)) ? 2 : 1
+          }}
+          linkDirectionalArrowLength={(link: any) => {
+            if (!selectedPaper) return 0
+            const key = `${resolveId(link.source)}|${resolveId(link.target)}`
+            const keyRev = `${resolveId(link.target)}|${resolveId(link.source)}`
+            return (neighborEdgeKeys.has(key) || neighborEdgeKeys.has(keyRev)) ? 5 : 0
+          }}
+          linkDirectionalArrowRelPos={1}
+          linkDirectionalArrowColor={(link: any) => {
+            const src = resolveId(link.source)
+            const tgt = resolveId(link.target)
+            if (src === selectedPaper?.id) return COLOR_CITES
+            if (tgt === selectedPaper?.id) return COLOR_CITED_BY
+            return EDGE_DEFAULT
           }}
           onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
           backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
