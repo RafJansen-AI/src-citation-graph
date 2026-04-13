@@ -13,7 +13,7 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
   const { selectedAuthorId, setSelectedAuthorId, setCoauthorPath, setCoauthorNoPath } = useAppStore()
   const [fromQuery, setFromQuery] = useState('')
   const [toQuery, setToQuery] = useState('')
-  const [toAuthorId, setToAuthorId] = useState<string | null>(null)
+  const [toAuthorName, setToAuthorName] = useState<string | null>(null)
 
   // Deduplicate authors across all papers
   const authors = useMemo<AuthorEntry[]>(() => {
@@ -40,10 +40,10 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
   }, [fromQuery, authors, selectedAuthorId])
 
   const toSuggestions = useMemo(() => {
-    if (toQuery.length < 2 || toAuthorId) return []
+    if (toQuery.length < 2 || toAuthorName) return []
     const q = toQuery.toLowerCase()
-    return authors.filter(a => a.name.toLowerCase().includes(q) && a.authorId !== selectedAuthorId).slice(0, 6)
-  }, [toQuery, authors, toAuthorId, selectedAuthorId])
+    return authors.filter(a => a.name.toLowerCase().includes(q) && a.name !== selectedAuthorId).slice(0, 6)
+  }, [toQuery, authors, toAuthorName, selectedAuthorId])
 
   const selectedAuthor = useMemo(
     () => selectedAuthorId ? authors.find(a => a.authorId === selectedAuthorId) : null,
@@ -51,18 +51,19 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
   )
 
   function selectFrom(a: AuthorEntry) {
-    setSelectedAuthorId(a.authorId)
+    // Store author name (not authorId) — OpenAlex gives the same person multiple IDs
+    setSelectedAuthorId(a.name)
     setFromQuery(a.name)
   }
 
   function selectTo(a: AuthorEntry) {
-    setToAuthorId(a.authorId)
+    setToAuthorName(a.name)
     setToQuery(a.name)
   }
 
   function connect() {
-    if (!selectedAuthorId || !toAuthorId) return
-    const path = coauthorPath(coauthorGraph, selectedAuthorId, toAuthorId)
+    if (!selectedAuthorId || !toAuthorName) return
+    const path = coauthorPath(coauthorGraph, selectedAuthorId, toAuthorName)
     setCoauthorPath(path)
     setCoauthorNoPath(path.length === 0)
   }
@@ -71,7 +72,7 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
     setFromQuery('')
     setToQuery('')
     setSelectedAuthorId(null)
-    setToAuthorId(null)
+    setToAuthorName(null)
     setCoauthorPath([])
     setCoauthorNoPath(false)
   }
@@ -131,7 +132,7 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
         )}
 
         {/* Connect button — shown when both authors are selected */}
-        {selectedAuthorId && toAuthorId && (
+        {selectedAuthorId && toAuthorName && (
           <button onClick={connect}
             className="px-2 py-1.5 text-xs rounded border cursor-pointer"
             style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}>

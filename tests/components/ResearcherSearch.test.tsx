@@ -53,12 +53,13 @@ describe('ResearcherSearch', () => {
     expect(screen.queryByText('Johan Rockström')).not.toBeInTheDocument()
   })
 
-  it('sets selectedAuthorId in store when author is clicked', async () => {
+  it('sets selectedAuthorId (author name) in store when author is clicked', async () => {
     const user = userEvent.setup()
     render(<ResearcherSearch graph={mockGraph} />)
     await user.type(screen.getByPlaceholderText('Search researcher…'), 'Jo')
     await user.click(screen.getByText('Johan Rockström'))
-    expect(useAppStore.getState().selectedAuthorId).toBe('A1')
+    // stores the name, not the authorId, to handle OpenAlex multi-ID issue
+    expect(useAppStore.getState().selectedAuthorId).toBe('Johan Rockström')
   })
 
   it('clears selectedAuthorId when × button is clicked after selecting', async () => {
@@ -66,7 +67,7 @@ describe('ResearcherSearch', () => {
     render(<ResearcherSearch graph={mockGraph} />)
     await user.type(screen.getByPlaceholderText('Search researcher…'), 'Jo')
     await user.click(screen.getByText('Johan Rockström'))
-    expect(useAppStore.getState().selectedAuthorId).toBe('A1')
+    expect(useAppStore.getState().selectedAuthorId).toBe('Johan Rockström')
 
     await user.click(screen.getByRole('button', { name: '×' }))
     expect(useAppStore.getState().selectedAuthorId).toBeNull()

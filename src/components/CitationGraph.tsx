@@ -59,12 +59,18 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds, minCitations])
 
+  // Re-heat simulation when the filtered set changes (search, toggle, slider)
+  useEffect(() => {
+    fgRef.current?.d3ReheatSimulation()
+  }, [filteredGraph])
+
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
     if (highlightedPath.includes(p.id)) return '#FBBF24'
     // Author highlight: dim all non-author papers
+    // selectedAuthorId stores the author's name (OpenAlex gives same person multiple IDs)
     if (selectedAuthorId) {
-      return p.authors.some(a => a.authorId === selectedAuthorId)
+      return p.authors.some(a => a.name === selectedAuthorId)
         ? (focusAreaColors[p.focusArea] ?? '#6B7280')
         : '#1F2937'
     }
@@ -95,6 +101,10 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       linkColor={() => '#4B5563'}
       onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
       backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
+      warmupTicks={150}
+      cooldownTicks={50}
+      d3AlphaDecay={0.04}
+      d3VelocityDecay={0.4}
     />
   )
 }

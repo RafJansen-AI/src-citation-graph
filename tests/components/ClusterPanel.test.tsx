@@ -55,7 +55,8 @@ describe('ClusterPanel', () => {
   })
 
   it('shows author cluster breakdown when selectedAuthorId is set', () => {
-    useAppStore.setState({ selectedAuthorId: 'A_TEST' })
+    // selectedAuthorId now stores the author name (not authorId)
+    useAppStore.setState({ selectedAuthorId: 'Test Researcher' })
     const graphWithAuthor: GraphData = {
       ...mockGraph,
       nodes: [{
@@ -75,7 +76,7 @@ describe('ClusterPanel priority', () => {
   it('shows paper detail when both selectedPaper and selectedAuthorId are set', () => {
     useAppStore.setState({
       selectedPaper: mockGraphWithAuthor.nodes[0],
-      selectedAuthorId: 'A1',
+      selectedAuthorId: 'Johan Rockström',  // stores name, not authorId
     })
     render(<ClusterPanel graph={mockGraphWithAuthor} />)
     expect(screen.getByText('Planetary Boundaries')).toBeInTheDocument()
@@ -83,7 +84,7 @@ describe('ClusterPanel priority', () => {
   })
 
   it('shows author view when only selectedAuthorId is set', () => {
-    useAppStore.setState({ selectedAuthorId: 'A1' })
+    useAppStore.setState({ selectedAuthorId: 'Johan Rockström' })
     render(<ClusterPanel graph={mockGraphWithAuthor} />)
     expect(screen.getByText('Johan Rockström')).toBeInTheDocument()
     expect(screen.getByText('1 papers in the network')).toBeInTheDocument()

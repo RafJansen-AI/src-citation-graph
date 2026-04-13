@@ -15,6 +15,23 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     coauthorPath, coauthorNoPath, setCoauthorPath, setCoauthorNoPath,
   } = useAppStore()
 
+  // Paper detail takes highest priority (direct user click on a node)
+  if (selectedPaper) return (
+    <aside className={aside} style={asideStyle}>
+      <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
+      <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
+      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {selectedPaper.focusArea}</p>
+      {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
+      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Citations: {selectedPaper.citationCount ?? 0}</p>
+      {selectedPaper.externalUrl && (
+        <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
+           className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
+          View on OpenAlex →
+        </a>
+      )}
+    </aside>
+  )
+
   // Co-authorship path view
   if (coauthorPath.length > 0 || coauthorNoPath) {
     const authorNames = new Map<string, string>()
@@ -79,28 +96,13 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     )
   }
 
-  if (selectedPaper) return (
-    <aside className={aside} style={asideStyle}>
-      <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
-      <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
-      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {selectedPaper.focusArea}</p>
-      {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
-      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Citations: {selectedPaper.citationCount ?? 0}</p>
-      {selectedPaper.externalUrl && (
-        <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
-           className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
-          View on OpenAlex →
-        </a>
-      )}
-    </aside>
-  )
-
   // Author view: show cluster breakdown for the selected author
+  // selectedAuthorId stores the author's name (normalized — OpenAlex gives same person multiple IDs)
   if (selectedAuthorId) {
     const authorPapers = graph.nodes.filter(n =>
-      n.authors.some(a => a.authorId === selectedAuthorId)
+      n.authors.some(a => a.name === selectedAuthorId)
     )
-    const authorName = authorPapers[0]?.authors.find(a => a.authorId === selectedAuthorId)?.name ?? 'Unknown'
+    const authorName = selectedAuthorId
     const clusterCounts = new Map<number, number>()
     for (const p of authorPapers) {
       clusterCounts.set(p.clusterId, (clusterCounts.get(p.clusterId) ?? 0) + 1)
