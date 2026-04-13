@@ -6,9 +6,9 @@ import { useAppStore } from '../../src/store/appStore'
 import type { GraphData } from '../../src/lib/types'
 
 const mockGraph: GraphData = {
-  nodes: [{ id: 'p1', title: 'Test Paper', year: 2020, authors: [], focusArea: 'AI', tldr: '', clusterId: 0, citationCount: 1 }],
+  nodes: [{ id: 'p1', title: 'Test Paper', year: 2020, authors: [], focusArea: 'AI', tldr: '', clusterId: 999, citationCount: 1 }],
   edges: [],
-  clusters: [{ id: 0, label: 'Cluster 1', summary: 'AI research theme.', color: '#4F46E5', paperIds: ['p1'] }],
+  clusters: [{ id: 999, label: 'Cluster 1', summary: 'AI research theme.', color: '#4F46E5', paperIds: ['p1'] }],
   generatedAt: '2024-01-01T00:00:00Z',
 }
 
@@ -51,7 +51,7 @@ describe('ClusterPanel', () => {
     render(<ClusterPanel graph={mockGraph} />)
     const toggleBtn = screen.getByRole('button', { name: /hide/i })
     await user.click(toggleBtn)
-    expect(useAppStore.getState().hiddenClusterIds).toContain(0)
+    expect(useAppStore.getState().hiddenClusterIds).toContain(999)
   })
 
   it('shows author cluster breakdown when selectedAuthorId is set', () => {
@@ -62,7 +62,7 @@ describe('ClusterPanel', () => {
       nodes: [{
         ...mockGraph.nodes[0],
         authors: [{ authorId: 'A_TEST', name: 'Test Researcher' }],
-        clusterId: 0,
+        clusterId: 999,
       }],
     }
     render(<ClusterPanel graph={graphWithAuthor} />)
