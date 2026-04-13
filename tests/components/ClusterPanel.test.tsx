@@ -12,6 +12,17 @@ const mockGraph: GraphData = {
   generatedAt: '2024-01-01T00:00:00Z',
 }
 
+const mockGraphWithAuthor: GraphData = {
+  nodes: [
+    { id: 'p1', title: 'Planetary Boundaries', year: 2009,
+      authors: [{ authorId: 'A1', name: 'Johan Rockström' }],
+      focusArea: 'Environmental science', tldr: 'A summary.', clusterId: 0, citationCount: 100 },
+  ],
+  edges: [],
+  clusters: [{ id: 0, label: 'Environmental science', summary: 'Env cluster', color: '#16A34A', paperIds: ['p1'] }],
+  generatedAt: '2024-01-01T00:00:00Z',
+}
+
 beforeEach(() => {
   useAppStore.setState({ selectedPaper: null, selectedCluster: null, selectedAuthorId: null, hiddenClusterIds: [] })
 })
@@ -57,5 +68,24 @@ describe('ClusterPanel', () => {
     expect(screen.getByText('Test Researcher')).toBeInTheDocument()
     expect(screen.getByText('1 papers in the network')).toBeInTheDocument()
     expect(screen.getByText('Cluster 1')).toBeInTheDocument()
+  })
+})
+
+describe('ClusterPanel priority', () => {
+  it('shows paper detail when both selectedPaper and selectedAuthorId are set', () => {
+    useAppStore.setState({
+      selectedPaper: mockGraphWithAuthor.nodes[0],
+      selectedAuthorId: 'A1',
+    })
+    render(<ClusterPanel graph={mockGraphWithAuthor} />)
+    expect(screen.getByText('Planetary Boundaries')).toBeInTheDocument()
+    expect(screen.getByText('A summary.')).toBeInTheDocument()
+  })
+
+  it('shows author view when only selectedAuthorId is set', () => {
+    useAppStore.setState({ selectedAuthorId: 'A1' })
+    render(<ClusterPanel graph={mockGraphWithAuthor} />)
+    expect(screen.getByText('Johan Rockström')).toBeInTheDocument()
+    expect(screen.getByText('1 papers in the network')).toBeInTheDocument()
   })
 })

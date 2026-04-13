@@ -8,6 +8,22 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     hiddenClusterIds, toggleClusterVisibility,
   } = useAppStore()
 
+  if (selectedPaper) return (
+    <aside className="w-80 shrink-0 bg-gray-800 border-l border-gray-700 p-4 overflow-y-auto">
+      <button onClick={() => setSelectedPaper(null)} className="text-xs text-gray-400 hover:text-white mb-3">← Back</button>
+      <h2 className="font-semibold text-white mb-1 text-sm leading-tight">{selectedPaper.title}</h2>
+      <p className="text-gray-400 text-xs mb-2">{selectedPaper.year} · {selectedPaper.focusArea}</p>
+      {selectedPaper.tldr && <p className="text-gray-300 text-sm mb-3">{selectedPaper.tldr}</p>}
+      <p className="text-xs text-gray-400">Citations: {selectedPaper.citationCount ?? 0}</p>
+      {selectedPaper.externalUrl && (
+        <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
+           className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
+          View on OpenAlex →
+        </a>
+      )}
+    </aside>
+  )
+
   // Author view: show cluster breakdown for the selected author
   if (selectedAuthorId) {
     const authorPapers = graph.nodes.filter(n =>
@@ -47,22 +63,6 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
       </aside>
     )
   }
-
-  if (selectedPaper) return (
-    <aside className="w-80 shrink-0 bg-gray-800 border-l border-gray-700 p-4 overflow-y-auto">
-      <button onClick={() => setSelectedPaper(null)} className="text-xs text-gray-400 hover:text-white mb-3">← Back</button>
-      <h2 className="font-semibold text-white mb-1 text-sm leading-tight">{selectedPaper.title}</h2>
-      <p className="text-gray-400 text-xs mb-2">{selectedPaper.year} · {selectedPaper.focusArea}</p>
-      {selectedPaper.tldr && <p className="text-gray-300 text-sm mb-3">{selectedPaper.tldr}</p>}
-      <p className="text-xs text-gray-400">Citations: {selectedPaper.citationCount ?? 0}</p>
-      {selectedPaper.externalUrl && (
-        <a href={selectedPaper.externalUrl} target="_blank" rel="noopener noreferrer"
-           className="mt-3 block text-indigo-400 hover:text-indigo-300 text-xs">
-          View on OpenAlex →
-        </a>
-      )}
-    </aside>
-  )
 
   if (selectedCluster) {
     const papers = graph.nodes.filter(n => selectedCluster.paperIds.includes(n.id))
