@@ -6,6 +6,17 @@ interface Props {
   focusAreaColors: Record<string, string>
 }
 
+const MIN_YEAR = 1973
+const MAX_YEAR = 2026
+
+const DECADE_PRESETS: { label: string; range: [number, number] }[] = [
+  { label: '1980s', range: [1980, 1989] },
+  { label: '1990s', range: [1990, 1999] },
+  { label: '2000s', range: [2000, 2009] },
+  { label: '2010s', range: [2010, 2019] },
+  { label: '2020s', range: [2020, 2026] },
+]
+
 export function SearchBar({ focusAreas, focusAreaColors }: Props) {
   const {
     setSearchQuery,
@@ -14,15 +25,29 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
     yearRange, setYearRange,
     selectedFocusAreas, toggleFocusArea, clearFocusAreas,
   } = useAppStore()
-
-  const MIN_YEAR = 1973
-  const MAX_YEAR = 2026
   const [localQuery, setLocalQuery] = useState('')
 
   useEffect(() => {
     const t = setTimeout(() => setSearchQuery(localQuery), 150)
     return () => clearTimeout(t)
   }, [localQuery, setSearchQuery])
+
+  function setFrom(raw: string) {
+    const v = parseInt(raw, 10)
+    if (isNaN(v)) return
+    setYearRange([Math.max(MIN_YEAR, Math.min(v, yearRange[1])), yearRange[1]])
+  }
+
+  function setTo(raw: string) {
+    const v = parseInt(raw, 10)
+    if (isNaN(v)) return
+    setYearRange([yearRange[0], Math.min(MAX_YEAR, Math.max(v, yearRange[0]))])
+  }
+
+  const isAllTime = yearRange[0] === MIN_YEAR && yearRange[1] === MAX_YEAR
+  const activeDecade = DECADE_PRESETS.find(
+    d => d.range[0] === yearRange[0] && d.range[1] === yearRange[1]
+  )
 
   return (
     <div className="flex items-center gap-4 px-4 py-2 border-b flex-wrap"
@@ -48,21 +73,59 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
           className="w-24"
         />
       </label>
-      <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-        Years: {yearRange[0]}–{yearRange[1]}
+
+      {/* Year range: number inputs + decade presets */}
+      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <span>Years</span>
         <input
-          type="range" min={MIN_YEAR} max={MAX_YEAR} step={1}
+          type="number" min={MIN_YEAR} max={MAX_YEAR}
           value={yearRange[0]}
-          onChange={e => setYearRange([Math.min(Number(e.target.value), yearRange[1]), yearRange[1]])}
-          className="w-20"
+          onChange={e => setFrom(e.target.value)}
+          className="w-16 px-1 py-0.5 rounded border text-center"
+          style={{ background: 'var(--input-bg)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+          aria-label="From year"
         />
+        <span style={{ color: 'var(--text-muted)' }}>–</span>
         <input
-          type="range" min={MIN_YEAR} max={MAX_YEAR} step={1}
+          type="number" min={MIN_YEAR} max={MAX_YEAR}
           value={yearRange[1]}
-          onChange={e => setYearRange([yearRange[0], Math.max(Number(e.target.value), yearRange[0])])}
-          className="w-20"
+          onChange={e => setTo(e.target.value)}
+          className="w-16 px-1 py-0.5 rounded border text-center"
+          style={{ background: 'var(--input-bg)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
+          aria-label="To year"
         />
-      </label>
+        <div className="flex gap-1">
+          <button
+            onClick={() => setYearRange([MIN_YEAR, MAX_YEAR])}
+            className="text-xs px-1.5 py-0.5 rounded border cursor-pointer"
+            style={{
+              borderColor: isAllTime ? 'var(--text-secondary)' : 'var(--border)',
+              color: isAllTime ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: isAllTime ? 'var(--bg-elevated)' : 'transparent',
+            }}
+          >
+            All
+          </button>
+          {DECADE_PRESETS.map(d => {
+            const active = activeDecade?.label === d.label
+            return (
+              <button
+                key={d.label}
+                onClick={() => setYearRange(d.range)}
+                className="text-xs px-1.5 py-0.5 rounded border cursor-pointer"
+                style={{
+                  borderColor: active ? 'var(--text-secondary)' : 'var(--border)',
+                  color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                  background: active ? 'var(--bg-elevated)' : 'transparent',
+                }}
+              >
+                {d.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-wrap gap-2 items-center">
         {focusAreas.map(area => {
           const active = selectedFocusAreas.includes(area)
