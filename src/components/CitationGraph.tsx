@@ -9,31 +9,49 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery } = useAppStore()
+  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId } = useAppStore()
 
-  // react-force-graph expects { nodes, links } — we store edges internally
   const filteredGraph = useMemo(() => {
-    const nodes = searchQuery
-      ? (() => {
-          const q = searchQuery.toLowerCase()
-          const matched = new Set(
-            graph.nodes
-              .filter(n => n.title.toLowerCase().includes(q) ||
-                           n.authors.some(a => a.name.toLowerCase().includes(q)))
-              .map(n => n.id)
+    let nodes = graph.nodes
+
+    // Text search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      const matched = new Set(
+        nodes
+          .filter(n =>
+            n.title.toLowerCase().includes(q) ||
+            n.authors.some(a => a.name.toLowerCase().includes(q))
           )
-          return graph.nodes.filter(n => matched.has(n.id))
-        })()
-      : graph.nodes
-    return { nodes, links: graph.edges }
-  }, [graph, searchQuery])
+          .map(n => n.id)
+      )
+      nodes = nodes.filter(n => matched.has(n.id))
+    }
+
+    // Hidden cluster filter
+    if (hiddenClusterIds.length > 0) {
+      nodes = nodes.filter(n => !hiddenClusterIds.includes(n.clusterId))
+    }
+
+    const nodeIds = new Set(nodes.map(n => n.id))
+    const links = graph.edges.filter(
+      e => nodeIds.has(e.source as string) && nodeIds.has(e.target as string)
+    )
+    return { nodes, links }
+  }, [graph, searchQuery, hiddenClusterIds])
 
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
     if (highlightedPath.includes(p.id)) return '#FBBF24'
+    // Author highlight: dim all non-author papers
+    if (selectedAuthorId) {
+      return p.authors.some(a => a.authorId === selectedAuthorId)
+        ? (focusAreaColors[p.focusArea] ?? '#6B7280')
+        : '#1F2937'
+    }
     if (selectedCluster && !selectedCluster.paperIds.includes(p.id)) return '#374151'
     return focusAreaColors[p.focusArea] ?? '#6B7280'
-  }, [highlightedPath, selectedCluster, focusAreaColors])
+  }, [highlightedPath, selectedAuthorId, selectedCluster, focusAreaColors])
 
   const nodeLabel = useCallback((node: any) => {
     const p = node as Paper
