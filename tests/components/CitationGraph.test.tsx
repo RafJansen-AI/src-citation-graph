@@ -32,20 +32,27 @@ describe('CitationGraph', () => {
     expect(screen.getByTestId('force-graph')).toHaveAttribute('data-nodecount', '0')
   })
 
-  it('filters nodes to selected focus areas only', () => {
-    const multiAreaGraph: GraphData = {
+  it('filters nodes to selected SRC themes', () => {
+    const themeFilterGraph: GraphData = {
       nodes: [
         { id: 'p1', title: 'A', year: 2020, authors: [], focusArea: 'Biology',
-          tldr: '', clusterId: 0, citationCount: 5 },
+          tldr: '', clusterId: 10, citationCount: 5 },
         { id: 'p2', title: 'B', year: 2021, authors: [], focusArea: 'Medicine',
-          tldr: '', clusterId: 0, citationCount: 2 },
-        { id: 'p3', title: 'C', year: 2022, authors: [], focusArea: 'Economics',
-          tldr: '', clusterId: 0, citationCount: 1 },
+          tldr: '', clusterId: 20, citationCount: 2 },
+        { id: 'p3', title: 'C', year: 2022, authors: [], focusArea: 'Business',
+          tldr: '', clusterId: 30, citationCount: 1 },
       ],
-      edges: [], clusters: [], generatedAt: '2024-01-01T00:00:00Z',
+      edges: [],
+      clusters: [
+        { id: 10, label: 'Biology', summary: '', color: '#059669', paperIds: ['p1'] },
+        { id: 20, label: 'Medicine', summary: '', color: '#DC2626', paperIds: ['p2'] },
+        { id: 30, label: 'Business', summary: '', color: '#4F46E5', paperIds: ['p3'] },
+      ],
+      generatedAt: '2024-01-01T00:00:00Z',
     }
-    useAppStore.setState({ selectedFocusAreas: ['Biology', 'Medicine'] })
-    render(<CitationGraph graph={multiAreaGraph} focusAreaColors={{}} />)
+    // Filter to Biodiversity & Ecosystems (Biology cluster) and Health & Wellbeing (Medicine cluster)
+    useAppStore.setState({ selectedFocusAreas: ['Biodiversity & Ecosystems', 'Health & Wellbeing'] })
+    render(<CitationGraph graph={themeFilterGraph} focusAreaColors={{}} />)
     expect(screen.getByTestId('force-graph')).toHaveAttribute('data-nodecount', '2')
   })
 })
