@@ -7,7 +7,12 @@ interface Props {
 }
 
 export function SearchBar({ focusAreas, focusAreaColors }: Props) {
-  const { setSearchQuery, sizeByCitations, toggleSizeByCitations, minCitations, setMinCitations } = useAppStore()
+  const {
+    setSearchQuery,
+    sizeByCitations, toggleSizeByCitations,
+    minCitations, setMinCitations,
+    selectedFocusAreas, toggleFocusArea, clearFocusAreas,
+  } = useAppStore()
   const [localQuery, setLocalQuery] = useState('')
 
   useEffect(() => {
@@ -39,16 +44,39 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
           className="w-24"
         />
       </label>
-      <div className="flex flex-wrap gap-3">
-        {focusAreas.map(area => (
-          <span key={area} className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <span
-              className="w-2 h-2 rounded-full inline-block"
-              style={{ backgroundColor: focusAreaColors[area] }}
-            />
-            {area}
-          </span>
-        ))}
+      <div className="flex flex-wrap gap-2 items-center">
+        {focusAreas.map(area => {
+          const active = selectedFocusAreas.includes(area)
+          return (
+            <button
+              key={area}
+              onClick={() => toggleFocusArea(area)}
+              aria-label={area}
+              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border cursor-pointer transition-opacity"
+              style={{
+                borderColor: active ? focusAreaColors[area] : 'var(--border)',
+                color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+                background: active ? 'var(--bg-elevated)' : 'transparent',
+                opacity: selectedFocusAreas.length > 0 && !active ? 0.5 : 1,
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full inline-block flex-shrink-0"
+                style={{ backgroundColor: focusAreaColors[area] }}
+              />
+              {area}
+            </button>
+          )
+        })}
+        {selectedFocusAreas.length > 0 && (
+          <button
+            onClick={clearFocusAreas}
+            className="text-xs px-2 py-0.5 rounded border cursor-pointer"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
+          >
+            Clear
+          </button>
+        )}
       </div>
     </div>
   )
