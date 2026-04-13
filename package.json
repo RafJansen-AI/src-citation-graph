@@ -16,7 +16,7 @@
     "pipeline": "npm run fetch-data && npm run detect-clusters && npm run summarize-clusters"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.87.0",
+    "@google/generative-ai": "^0.24.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-force-graph": "^1.48.2",
