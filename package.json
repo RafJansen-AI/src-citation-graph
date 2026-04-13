@@ -12,11 +12,13 @@
     "test:run": "vitest run --passWithNoTests",
     "fetch-data": "tsx scripts/fetchData.ts",
     "detect-clusters": "tsx scripts/detectClusters.ts",
-    "summarize-clusters": "tsx scripts/summarizeClusters.ts",
+    "summarize-clusters": "tsx --env-file=.env scripts/summarizeClusters.ts",
     "pipeline": "npm run fetch-data && npm run detect-clusters && npm run summarize-clusters"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-force-graph": "^1.48.2",

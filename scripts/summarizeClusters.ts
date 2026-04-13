@@ -12,8 +12,22 @@ async function summarize(model: ReturnType<GoogleGenerativeAI['getGenerativeMode
     .map(p => `- "${p.title}" (${p.year})${p.tldr ? `: ${p.tldr.slice(0, 120)}` : ''}`)
     .join('\n')
 
-  const result = await model.generateContent(PROMPT(list))
-  return result.response.text().trim()
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const result = await model.generateContent(PROMPT(list))
+      return result.response.text().trim()
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status
+      if (status === 429) {
+        const delay = Math.pow(2, attempt + 1) * 10_000  // 20s, 40s, 80s, 160s, 320s
+        console.log(`  Rate limited — waiting ${delay / 1000}s…`)
+        await new Promise(r => setTimeout(r, delay))
+      } else {
+        throw err
+      }
+    }
+  }
+  throw new Error('Max retries exceeded')
 }
 
 async function main() {

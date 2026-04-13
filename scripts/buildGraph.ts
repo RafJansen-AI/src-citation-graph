@@ -2,19 +2,22 @@ import type { GraphData, Paper, GraphEdge } from '../src/lib/types'
 import { OpenAlexClient, type OAWork } from './openAlex'
 
 export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> {
-  const srcIds = new Set(works.map(w => OpenAlexClient.workId(w.id)))
+  const validWorks = works.filter(w => w.id != null && w.title != null)
+  const srcIds = new Set(validWorks.map(w => OpenAlexClient.workId(w.id)))
 
-  const nodes: Paper[] = works.map(w => {
+  const nodes: Paper[] = validWorks.map(w => {
     const id = OpenAlexClient.workId(w.id)
     const doi = w.ids?.doi?.replace('https://doi.org/', '')
     return {
       id,
       title: w.title ?? 'Untitled',
       year: w.publication_year ?? 0,
-      authors: (w.authorships ?? []).map(a => ({
-        authorId: OpenAlexClient.workId(a.author.id),
-        name: a.author.display_name,
-      })),
+      authors: (w.authorships ?? [])
+        .filter(a => a.author?.id != null)
+        .map(a => ({
+          authorId: OpenAlexClient.workId(a.author.id),
+          name: a.author.display_name ?? 'Unknown',
+        })),
       focusArea: OpenAlexClient.topConcept(w.concepts ?? []),
       tldr: OpenAlexClient.reconstructAbstract(w.abstract_inverted_index).slice(0, 400),
       clusterId: -1,
@@ -28,9 +31,9 @@ export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> 
   const seen = new Set<string>()
   const edges: GraphEdge[] = []
 
-  for (const w of works) {
+  for (const w of validWorks) {
     const srcId = OpenAlexClient.workId(w.id)
-    for (const ref of w.referenced_works ?? []) {
+    for (const ref of (w.referenced_works ?? []).filter(Boolean)) {
       const tgtId = OpenAlexClient.workId(ref)
       if (!srcIds.has(tgtId)) continue
       const key = `${srcId}:${tgtId}`
