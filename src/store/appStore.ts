@@ -8,6 +8,11 @@ interface AppState {
   highlightedPath: string[]
   hiddenClusterIds: number[]
   selectedAuthorId: string | null
+  sizeByCitations: boolean
+  theme: 'dark' | 'light'
+  minCitations: number
+  coauthorPath: string[]
+  coauthorNoPath: boolean
 
   setSelectedPaper: (p: Paper | null) => void
   setSelectedCluster: (c: Cluster | null) => void
@@ -16,6 +21,11 @@ interface AppState {
   toggleClusterVisibility: (id: number) => void
   // Selecting an author clears any stale highlighted path (path highlight takes priority in nodeColor)
   setSelectedAuthorId: (id: string | null) => void
+  toggleSizeByCitations: () => void
+  toggleTheme: () => void
+  setMinCitations: (n: number) => void
+  setCoauthorPath: (path: string[]) => void
+  setCoauthorNoPath: (v: boolean) => void
 }
 
 export const useAppStore = create<AppState>(set => ({
@@ -25,6 +35,11 @@ export const useAppStore = create<AppState>(set => ({
   highlightedPath: [],
   hiddenClusterIds: [],
   selectedAuthorId: null,
+  sizeByCitations: false,
+  theme: 'dark',
+  minCitations: 0,
+  coauthorPath: [],
+  coauthorNoPath: false,
 
   setSelectedPaper: p => set({ selectedPaper: p }),
   setSelectedCluster: c => set({ selectedCluster: c }),
@@ -36,5 +51,10 @@ export const useAppStore = create<AppState>(set => ({
         ? s.hiddenClusterIds.filter(x => x !== id)
         : [...s.hiddenClusterIds, id],
     })),
-  setSelectedAuthorId: id => set({ selectedAuthorId: id, highlightedPath: [] }),
+  setSelectedAuthorId: id => set({ selectedAuthorId: id, highlightedPath: [], coauthorPath: [], coauthorNoPath: false }),
+  toggleSizeByCitations: () => set(s => ({ sizeByCitations: !s.sizeByCitations })),
+  toggleTheme: () => set(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
+  setMinCitations: n => set({ minCitations: n }),
+  setCoauthorPath: path => set({ coauthorPath: path }),
+  setCoauthorNoPath: v => set({ coauthorNoPath: v }),
 }))

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef, useEffect } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
@@ -15,7 +15,15 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId } = useAppStore()
+  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations } = useAppStore()
+  const fgRef = useRef<any>(null)
+
+  useEffect(() => {
+    const fg = fgRef.current
+    if (!fg) return
+    fg.d3Force('charge')?.strength(-120)
+    fg.d3Force('link')?.distance(60)
+  }, [])
 
   const filteredGraph = useMemo(() => {
     let nodes = graph.nodes
@@ -39,12 +47,17 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       nodes = nodes.filter(n => !hiddenClusterIds.includes(n.clusterId))
     }
 
+    // Minimum citation count filter
+    if (minCitations > 0) {
+      nodes = nodes.filter(n => (n.citationCount ?? 0) >= minCitations)
+    }
+
     const nodeIds = new Set(nodes.map(n => n.id))
     const links = graph.edges.filter(
       e => nodeIds.has(resolveId(e.source)) && nodeIds.has(resolveId(e.target))
     )
     return { nodes, links }
-  }, [graph, searchQuery, hiddenClusterIds])
+  }, [graph, searchQuery, hiddenClusterIds, minCitations])
 
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
@@ -64,16 +77,24 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     return `${p.title} (${p.year})${p.tldr ? `\n${p.tldr}` : ''}`
   }, [])
 
+  const nodeVal = useCallback((node: any) => {
+    if (!sizeByCitations) return 1
+    const p = node as Paper
+    return Math.log((p.citationCount ?? 1) + 1)
+  }, [sizeByCitations])
+
   return (
     <ForceGraph2D
+      ref={fgRef}
       graphData={filteredGraph}
       nodeId="id"
       nodeColor={nodeColor}
       nodeLabel={nodeLabel}
-      nodeRelSize={4}
-      linkColor={() => '#374151'}
+      nodeRelSize={6}
+      nodeVal={nodeVal}
+      linkColor={() => '#4B5563'}
       onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
-      backgroundColor="#111827"
+      backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
     />
   )
 }
