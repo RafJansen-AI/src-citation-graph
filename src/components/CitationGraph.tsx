@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useEffect } from 'react'
+import { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
@@ -17,6 +17,22 @@ interface Props {
 export function CitationGraph({ graph, focusAreaColors }: Props) {
   const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations } = useAppStore()
   const fgRef = useRef<any>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState({ width: 0, height: 0 })
+
+  // Measure the container so ForceGraph2D gets exact pixel dimensions.
+  // Without this, auto-detection inside a flex container can return 0 or a
+  // wrong value, causing the canvas coordinate system to mismatch the
+  // visual display — all clicks land at wrong positions and miss every node.
+  useEffect(() => {
+    if (!containerRef.current) return
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect
+      setSize({ width, height })
+    })
+    ro.observe(containerRef.current)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     const fg = fgRef.current
@@ -59,15 +75,9 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds, minCitations])
 
-  // Re-heat simulation when the filtered set changes (search, toggle, slider)
-  useEffect(() => {
-    fgRef.current?.d3ReheatSimulation()
-  }, [filteredGraph])
-
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
     if (highlightedPath.includes(p.id)) return '#FBBF24'
-    // Author highlight: dim all non-author papers
     // selectedAuthorId stores the author's name (OpenAlex gives same person multiple IDs)
     if (selectedAuthorId) {
       return p.authors.some(a => a.name === selectedAuthorId)
@@ -86,25 +96,33 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
   const nodeVal = useCallback((node: any) => {
     if (!sizeByCitations) return 1
     const p = node as Paper
-    return Math.log((p.citationCount ?? 1) + 1)
+    // Minimum of 1 so zero-citation papers are still visible and clickable.
+    // Math.log(1+1) = 0 without the max, giving zero-radius nodes.
+    return Math.max(1, Math.log((p.citationCount ?? 0) + 1))
   }, [sizeByCitations])
 
   return (
-    <ForceGraph2D
-      ref={fgRef}
-      graphData={filteredGraph}
-      nodeId="id"
-      nodeColor={nodeColor}
-      nodeLabel={nodeLabel}
-      nodeRelSize={6}
-      nodeVal={nodeVal}
-      linkColor={() => '#4B5563'}
-      onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
-      backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
-      warmupTicks={150}
-      cooldownTicks={50}
-      d3AlphaDecay={0.04}
-      d3VelocityDecay={0.4}
-    />
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      {size.width > 0 && (
+        <ForceGraph2D
+          ref={fgRef}
+          width={size.width}
+          height={size.height}
+          graphData={filteredGraph}
+          nodeId="id"
+          nodeColor={nodeColor}
+          nodeLabel={nodeLabel}
+          nodeRelSize={6}
+          nodeVal={nodeVal}
+          linkColor={() => '#4B5563'}
+          onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
+          backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
+          warmupTicks={150}
+          cooldownTicks={50}
+          d3AlphaDecay={0.04}
+          d3VelocityDecay={0.4}
+        />
+      )}
+    </div>
   )
 }
