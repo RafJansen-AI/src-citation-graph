@@ -3,7 +3,7 @@ import { CitationGraph } from './components/CitationGraph'
 import { ClusterPanel } from './components/ClusterPanel'
 import { ResearcherSearch } from './components/ResearcherSearch'
 import { SearchBar } from './components/SearchBar'
-import { resolveConceptColor, SRC_CONCEPTS } from './lib/conceptColors'
+import { SRC_THEME_COLORS, SRC_THEMES } from './lib/srcThemes'
 import { useAppStore } from './store/appStore'
 
 export default function App() {
@@ -27,21 +27,8 @@ export default function App() {
     </div>
   )
 
-  const configColors: Record<string, string> = { 'Other': '#6B7280' }
-  data.clusters.forEach(c => {
-    const base = c.label.replace(/ \(\d+\)$/, '')
-    if (!configColors[base]) configColors[base] = c.color
-  })
-
-  const focusAreaColors: Record<string, string> = {}
-  const allAreas = new Set(data.nodes.map(n => n.focusArea))
-  allAreas.forEach(area => {
-    focusAreaColors[area] = resolveConceptColor(area, configColors)
-  })
-  focusAreaColors['Other'] = '#6B7280'
-
-  const legendAreas = [...allAreas].filter(a => SRC_CONCEPTS.has(a)).sort()
-  if ([...allAreas].some(a => !SRC_CONCEPTS.has(a))) legendAreas.push('Other')
+  const focusAreaColors = SRC_THEME_COLORS
+  const legendAreas = [...SRC_THEMES, 'Other']
 
   return (
     <div data-theme={theme} className="h-screen flex flex-col"
