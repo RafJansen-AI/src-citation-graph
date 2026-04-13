@@ -34,7 +34,7 @@ async function main() {
   const apiKey = process.env.GOOGLE_API_KEY
   if (!apiKey) throw new Error('GOOGLE_API_KEY not set')
 
-  const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+  const modelName = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash-lite'
   const genAI = new GoogleGenerativeAI(apiKey)
   const model = genAI.getGenerativeModel({ model: modelName })
   console.log(`Using model: ${modelName}`)
