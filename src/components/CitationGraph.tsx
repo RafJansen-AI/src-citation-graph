@@ -3,6 +3,12 @@ import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
 
+function resolveId(n: unknown): string {
+  if (typeof n === 'string') return n
+  if (n && typeof n === 'object' && 'id' in n) return (n as any).id as string
+  return ''
+}
+
 interface Props {
   graph: GraphData
   focusAreaColors: Record<string, string>
@@ -35,7 +41,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
 
     const nodeIds = new Set(nodes.map(n => n.id))
     const links = graph.edges.filter(
-      e => nodeIds.has(e.source as string) && nodeIds.has(e.target as string)
+      e => nodeIds.has(resolveId(e.source)) && nodeIds.has(resolveId(e.target))
     )
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds])
