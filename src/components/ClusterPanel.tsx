@@ -1,6 +1,7 @@
 import { useAppStore } from '../store/appStore'
 import type { GraphData } from '../lib/types'
 import { sharedPapers } from '../lib/coauthorGraph'
+import { buildClusterThemeMap, CLUSTER_LABEL_TO_THEME, SRC_THEME_COLORS } from '../lib/srcThemes'
 
 const aside = "w-80 shrink-0 border-l p-4 overflow-y-auto"
 const asideStyle = { background: 'var(--bg-surface)', borderColor: 'var(--border)' }
@@ -15,12 +16,25 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     coauthorPath, coauthorNoPath, setCoauthorPath, setCoauthorNoPath,
   } = useAppStore()
 
+  const clusterThemeMap = buildClusterThemeMap(graph.clusters)
+
+  function themeLabel(rawLabel: string): string {
+    const base = rawLabel.replace(/ \(\d+\)$/, '')
+    const suffix = rawLabel.match(/ \(\d+\)$/)?.[0] ?? ''
+    const theme = CLUSTER_LABEL_TO_THEME[base]
+    return theme ? theme + suffix : rawLabel
+  }
+
+  function themeColor(clusterId: number): string {
+    return SRC_THEME_COLORS[clusterThemeMap.get(clusterId) ?? 'Other'] ?? '#6B7280'
+  }
+
   // Paper detail takes highest priority (direct user click on a node)
   if (selectedPaper) return (
     <aside className={aside} style={asideStyle}>
       <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
       <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
-      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {selectedPaper.focusArea}</p>
+      <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {CLUSTER_LABEL_TO_THEME[selectedPaper.focusArea] ?? selectedPaper.focusArea}</p>
       {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Citations: {selectedPaper.citationCount ?? 0}</p>
       {selectedPaper.externalUrl && (
@@ -129,8 +143,8 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
                     style={{ background: 'transparent' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cluster.color }} />
-                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{cluster.label}</span>
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColor(clusterId) }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{themeLabel(cluster.label)}</span>
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{count}</span>
                 </li>
               )
@@ -146,8 +160,8 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
       <aside className={aside} style={asideStyle}>
         <button onClick={() => setSelectedCluster(null)} className={backBtn} style={backBtnStyle}>← All clusters</button>
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedCluster.color }} />
-          <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{selectedCluster.label}</h2>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor(selectedCluster.id) }} />
+          <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{themeLabel(selectedCluster.label)}</h2>
         </div>
         <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{selectedCluster.summary || 'No summary yet.'}</p>
         <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{papers.length} papers</p>
@@ -180,18 +194,18 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
               <li key={c.id} className={`p-3 rounded border ${hidden ? 'opacity-40' : ''}`}
                   style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColor(c.id) }} />
                   <button
                     onClick={() => setSelectedCluster(c)}
                     className="text-sm font-medium text-left hover:underline flex-1 truncate"
                     style={{ color: 'var(--text-primary)' }}
                   >
-                    {c.label}
+                    {themeLabel(c.label)}
                   </button>
                   <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>{c.paperIds.length}</span>
                   <button
                     onClick={e => { e.stopPropagation(); toggleClusterVisibility(c.id) }}
-                    aria-label={hidden ? `Show ${c.label}` : `Hide ${c.label}`}
+                    aria-label={hidden ? `Show ${themeLabel(c.label)}` : `Hide ${themeLabel(c.label)}`}
                     className="text-xs ml-1 shrink-0"
                     style={{ color: 'var(--text-muted)' }}
                     title={hidden ? 'Show' : 'Hide'}
