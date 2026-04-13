@@ -4,6 +4,11 @@ import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
 import { buildClusterThemeMap } from '../lib/srcThemes'
 
+const DIMMED = '#1F2937'
+const EDGE_HIGHLIGHT = '#9CA3AF'
+const EDGE_DIM = '#1F2937'
+const EDGE_DEFAULT = '#4B5563'
+
 function resolveId(n: unknown): string {
   if (typeof n === 'string') return n
   if (n && typeof n === 'object' && 'id' in n) return (n as any).id as string
@@ -16,7 +21,7 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas } = useAppStore()
+  const { setSelectedPaper, selectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas } = useAppStore()
   const fgRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -92,18 +97,37 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas, clusterThemeMap])
 
+  // Neighbor sets for selected-paper connection highlighting
+  const { neighborIds, neighborEdgeKeys } = useMemo(() => {
+    if (!selectedPaper) return { neighborIds: new Set<string>(), neighborEdgeKeys: new Set<string>() }
+    const neighborIds = new Set<string>()
+    const neighborEdgeKeys = new Set<string>()
+    for (const link of filteredGraph.links) {
+      const src = resolveId(link.source)
+      const tgt = resolveId(link.target)
+      if (src === selectedPaper.id) { neighborIds.add(tgt); neighborEdgeKeys.add(`${src}|${tgt}`) }
+      if (tgt === selectedPaper.id) { neighborIds.add(src); neighborEdgeKeys.add(`${tgt}|${src}`) }
+    }
+    return { neighborIds, neighborEdgeKeys }
+  }, [selectedPaper, filteredGraph.links])
+
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
     if (highlightedPath.includes(p.id)) return '#FBBF24'
     const theme = clusterThemeMap.get(p.clusterId) ?? 'Other'
     const themeColor = focusAreaColors[theme] ?? '#6B7280'
+    // Selected-paper connection highlight: dim everything except the paper itself and its neighbours
+    if (selectedPaper) {
+      if (p.id === selectedPaper.id || neighborIds.has(p.id)) return themeColor
+      return DIMMED
+    }
     // selectedAuthorId stores the author's name (OpenAlex gives same person multiple IDs)
     if (selectedAuthorId) {
-      return p.authors.some(a => a.name === selectedAuthorId) ? themeColor : '#1F2937'
+      return p.authors.some(a => a.name === selectedAuthorId) ? themeColor : DIMMED
     }
     if (selectedCluster && !selectedCluster.paperIds.includes(p.id)) return '#374151'
     return themeColor
-  }, [highlightedPath, selectedAuthorId, selectedCluster, focusAreaColors, clusterThemeMap])
+  }, [highlightedPath, selectedPaper, neighborIds, selectedAuthorId, selectedCluster, focusAreaColors, clusterThemeMap])
 
   const nodeLabel = useCallback((node: any) => {
     const p = node as Paper
@@ -131,7 +155,18 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
           nodeLabel={nodeLabel}
           nodeRelSize={6}
           nodeVal={nodeVal}
-          linkColor={() => '#4B5563'}
+          linkColor={(link: any) => {
+            if (!selectedPaper) return EDGE_DEFAULT
+            const key = `${resolveId(link.source)}|${resolveId(link.target)}`
+            const keyRev = `${resolveId(link.target)}|${resolveId(link.source)}`
+            return (neighborEdgeKeys.has(key) || neighborEdgeKeys.has(keyRev)) ? EDGE_HIGHLIGHT : EDGE_DIM
+          }}
+          linkWidth={(link: any) => {
+            if (!selectedPaper) return 1
+            const key = `${resolveId(link.source)}|${resolveId(link.target)}`
+            const keyRev = `${resolveId(link.target)}|${resolveId(link.source)}`
+            return (neighborEdgeKeys.has(key) || neighborEdgeKeys.has(keyRev)) ? 2 : 1
+          }}
           onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
           backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
           warmupTicks={150}
