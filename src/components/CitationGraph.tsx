@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { ForceGraph2D } from 'react-force-graph'
+import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
 

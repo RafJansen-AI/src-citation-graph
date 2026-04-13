@@ -3,9 +3,9 @@ import { render, screen } from '@testing-library/react'
 import { CitationGraph } from '../../src/components/CitationGraph'
 import type { GraphData } from '../../src/lib/types'
 
-// react-force-graph uses canvas — mock it
-vi.mock('react-force-graph', () => ({
-  ForceGraph2D: ({ graphData }: any) => (
+// react-force-graph-2d uses canvas — mock it
+vi.mock('react-force-graph-2d', () => ({
+  default: ({ graphData }: any) => (
     <div data-testid="force-graph" data-nodecount={graphData.nodes.length} />
   ),
 }))
