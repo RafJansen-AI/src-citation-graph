@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import type { GraphData } from '../lib/types'
 import { useAppStore } from '../store/appStore'
-import { buildCoauthorGraph, coauthorPath } from '../lib/coauthorGraph'
+import { buildCoauthorGraph, coauthorPath, sharedPapers } from '../lib/coauthorGraph'
 
 interface AuthorEntry {
   authorId: string
@@ -10,21 +10,21 @@ interface AuthorEntry {
 }
 
 export function ResearcherSearch({ graph }: { graph: GraphData }) {
-  const { selectedAuthorId, setSelectedAuthorId, setCoauthorPath, setCoauthorNoPath } = useAppStore()
+  const { selectedAuthorId, setSelectedAuthorId, setCoauthorPath, setCoauthorNoPath, setHighlightedPath } = useAppStore()
   const [fromQuery, setFromQuery] = useState('')
   const [toQuery, setToQuery] = useState('')
   const [toAuthorName, setToAuthorName] = useState<string | null>(null)
 
-  // Deduplicate authors across all papers
+  // Deduplicate authors by name (same person can have multiple OpenAlex authorIds)
   const authors = useMemo<AuthorEntry[]>(() => {
     const map = new Map<string, AuthorEntry>()
     for (const node of graph.nodes) {
       for (const a of node.authors) {
-        const entry = map.get(a.authorId)
+        const entry = map.get(a.name)
         if (entry) {
           entry.paperCount++
         } else {
-          map.set(a.authorId, { authorId: a.authorId, name: a.name, paperCount: 1 })
+          map.set(a.name, { authorId: a.authorId, name: a.name, paperCount: 1 })
         }
       }
     }
@@ -66,6 +66,12 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
     const path = coauthorPath(coauthorGraph, selectedAuthorId, toAuthorName)
     setCoauthorPath(path)
     setCoauthorNoPath(path.length === 0)
+    // Highlight all papers shared between consecutive authors in the path
+    const ids: string[] = []
+    for (let i = 0; i < path.length - 1; i++) {
+      for (const p of sharedPapers(graph.nodes, path[i], path[i + 1])) ids.push(p.id)
+    }
+    setHighlightedPath(ids)
   }
 
   function clear() {
@@ -110,7 +116,7 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
           <div className="relative">
             <input
               value={toQuery}
-              onChange={e => { setToQuery(e.target.value); if (!e.target.value) setToAuthorId(null) }}
+              onChange={e => { setToQuery(e.target.value); if (!e.target.value) setToAuthorName(null) }}
               placeholder="Connect to…"
               className="w-40 text-xs px-2 py-1.5 rounded border"
               style={{ background: 'var(--input-bg)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
@@ -149,7 +155,7 @@ export function ResearcherSearch({ graph }: { graph: GraphData }) {
           </button>
         )}
 
-        {selectedAuthor && !toAuthorId && (
+        {selectedAuthor && !toAuthorName && (
           <span className="text-xs self-center" style={{ color: 'var(--text-muted)' }}>
             {selectedAuthor.paperCount} papers highlighted
           </span>
