@@ -63,7 +63,7 @@ export default function App() {
         </button>
       </header>
       <ResearcherSearch graph={data} />
-      <SearchBar focusAreas={legendAreas} focusAreaColors={focusAreaColors} />
+      <SearchBar focusAreas={legendAreas} focusAreaColors={focusAreaColors} graph={data} />
       <main className="flex-1 flex min-h-0">
         <div className="flex-1 relative">
           <CitationGraph graph={data} focusAreaColors={focusAreaColors} />

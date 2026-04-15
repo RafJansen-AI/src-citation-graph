@@ -1,8 +1,27 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SearchBar } from '../../src/components/SearchBar'
 import { useAppStore } from '../../src/store/appStore'
+import { downloadFile } from '../../src/lib/export'
+import type { GraphData } from '../../src/lib/types'
+
+vi.mock('../../src/lib/export', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../src/lib/export')>()
+  return { ...actual, downloadFile: vi.fn() }
+})
+
+const mockGraph: GraphData = {
+  nodes: [
+    { id: 'p1', title: 'Planetary Boundaries Framework', year: 2009,
+      authors: [{ authorId: 'A1', name: 'Johan Rockström' }],
+      focusArea: 'Environmental science', tldr: '', clusterId: 0, citationCount: 100 },
+    { id: 'p2', title: 'Urban Biodiversity', year: 2015,
+      authors: [{ authorId: 'A2', name: 'Carl Folke' }],
+      focusArea: 'Geography', tldr: '', clusterId: 1, citationCount: 20 },
+  ],
+  edges: [], clusters: [], generatedAt: '2024-01-01T00:00:00Z',
+}
 
 afterEach(() => { useAppStore.setState({ searchQuery: '', selectedFocusAreas: [] }) })
 
@@ -90,5 +109,45 @@ describe('SearchBar — focus area store actions', () => {
     useAppStore.setState({ selectedFocusAreas: ['Biology', 'Medicine'] })
     useAppStore.getState().clearFocusAreas()
     expect(useAppStore.getState().selectedFocusAreas).toHaveLength(0)
+  })
+})
+
+const defaultProps = {
+  focusAreas: [],
+  focusAreaColors: {},
+  graph: mockGraph,
+}
+
+describe('SearchBar keyword export', () => {
+  beforeEach(() => {
+    useAppStore.setState({ searchQuery: '' })
+    vi.clearAllMocks()
+  })
+
+  it('shows no export buttons when query is empty', () => {
+    render(<SearchBar {...defaultProps} />)
+    expect(screen.queryByRole('button', { name: /bibtex/i })).not.toBeInTheDocument()
+  })
+
+  it('shows export buttons and match count when query matches papers', async () => {
+    const user = userEvent.setup()
+    render(<SearchBar {...defaultProps} />)
+    await user.type(screen.getByPlaceholderText(/filter papers/i), 'planetary')
+    expect(await screen.findByRole('button', { name: /bibtex/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /markdown/i })).toBeInTheDocument()
+    expect(screen.getByText(/1 paper/i)).toBeInTheDocument()
+  })
+
+  it('calls downloadFile when BibTeX export is clicked', async () => {
+    const user = userEvent.setup()
+    render(<SearchBar {...defaultProps} />)
+    await user.type(screen.getByPlaceholderText(/filter papers/i), 'planetary')
+    const btn = await screen.findByRole('button', { name: /bibtex/i })
+    await user.click(btn)
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.stringContaining('@article'),
+      expect.stringMatching(/\.bib$/),
+      'text/plain',
+    )
   })
 })

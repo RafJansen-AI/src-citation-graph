@@ -1,23 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAppStore } from '../store/appStore'
+import type { GraphData } from '../lib/types'
+import { toBibtex, toMarkdown, downloadFile } from '../lib/export'
 
 interface Props {
   focusAreas: string[]
   focusAreaColors: Record<string, string>
+  graph?: GraphData
 }
 
-const MIN_YEAR = 1973
+const MIN_YEAR = 2007
 const MAX_YEAR = 2026
 
 const DECADE_PRESETS: { label: string; range: [number, number] }[] = [
-  { label: '1980s', range: [1980, 1989] },
-  { label: '1990s', range: [1990, 1999] },
-  { label: '2000s', range: [2000, 2009] },
+  { label: '2000s', range: [2007, 2009] },
   { label: '2010s', range: [2010, 2019] },
   { label: '2020s', range: [2020, 2026] },
 ]
 
-export function SearchBar({ focusAreas, focusAreaColors }: Props) {
+export function SearchBar({ focusAreas, focusAreaColors, graph }: Props) {
   const {
     setSearchQuery,
     sizeByCitations, toggleSizeByCitations,
@@ -45,6 +46,16 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
   }
 
   const isAllTime = yearRange[0] === MIN_YEAR && yearRange[1] === MAX_YEAR
+
+  const matchingPapers = useMemo(() => {
+    if (!graph || localQuery.length < 2) return []
+    const q = localQuery.toLowerCase()
+    return graph.nodes.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      n.authors.some(a => a.name.toLowerCase().includes(q))
+    )
+  }, [graph, localQuery])
+
   const activeDecade = DECADE_PRESETS.find(
     d => d.range[0] === yearRange[0] && d.range[1] === yearRange[1]
   )
@@ -59,6 +70,36 @@ export function SearchBar({ focusAreas, focusAreaColors }: Props) {
         className="text-sm px-3 py-1 rounded border w-56"
         style={{ background: 'var(--input-bg)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}
       />
+      {matchingPapers.length > 0 && (
+        <>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {matchingPapers.length} paper{matchingPapers.length !== 1 ? 's' : ''}
+          </span>
+          <button
+            aria-label="Export BibTeX"
+            onClick={() => {
+              const slug = `keyword-${localQuery.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`
+              downloadFile(toBibtex(matchingPapers), `src-${slug}.bib`, 'text/plain')
+            }}
+            className="text-xs px-2 py-1 rounded border cursor-pointer"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
+          >
+            ↓ BibTeX
+          </button>
+          <button
+            aria-label="Export Markdown"
+            onClick={() => {
+              const label = `Keyword: ${localQuery}`
+              const slug = `keyword-${localQuery.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`
+              downloadFile(toMarkdown(matchingPapers, label), `src-${slug}.md`, 'text/markdown')
+            }}
+            className="text-xs px-2 py-1 rounded border cursor-pointer"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
+          >
+            ↓ Markdown
+          </button>
+        </>
+      )}
       <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
              style={{ color: 'var(--text-secondary)' }}>
         <input type="checkbox" checked={sizeByCitations} onChange={toggleSizeByCitations} />

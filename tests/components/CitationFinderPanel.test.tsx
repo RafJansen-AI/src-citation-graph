@@ -85,4 +85,15 @@ describe('CitationFinderPanel', () => {
     expect(useAppStore.getState().highlightedPath).toEqual([])
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('shows export buttons after a successful search', async () => {
+    const user = userEvent.setup()
+    render(<CitationFinderPanel graph={mockGraph} onClose={() => {}} />)
+    await user.type(screen.getByPlaceholderText(/paste your title/i), 'planetary tipping points')
+    await user.click(screen.getByRole('button', { name: /search/i }))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /bibtex/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /markdown/i })).toBeInTheDocument()
+    })
+  })
 })

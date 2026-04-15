@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { GraphData, Paper } from '../lib/types'
 import { findRelevantPapers, embedQuery } from '../lib/citationFinder'
 import { useAppStore } from '../store/appStore'
+import { ExportButtons } from './ExportButtons'
 
 const aside = "w-80 shrink-0 border-l p-4 overflow-y-auto"
 const asideStyle = { background: 'var(--bg-surface)', borderColor: 'var(--border)' }
@@ -105,6 +106,9 @@ export function CitationFinderPanel({ graph, onClose }: Props) {
         <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
           {results.length} papers — {mode === 'semantic' ? 'semantic' : 'keyword'} match — highlighted in yellow
         </p>
+      )}
+      {results.length > 0 && (
+        <ExportButtons papers={results} label="Citation Finder Results" />
       )}
       {query.trim() && results.length === 0 && !searching && mode !== null && (
         <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>No matches found.</p>
