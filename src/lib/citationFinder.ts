@@ -83,3 +83,33 @@ export function findRelevantPapers(
     .slice(0, topN)
     .map(x => x.paper)
 }
+
+/** Embeds a query string using Google's text-embedding-004 model.
+ *  Requires VITE_GOOGLE_API_KEY to be set in the environment.
+ *  Returns null if the key is missing or the call fails.
+ */
+export async function embedQuery(query: string): Promise<number[] | null> {
+  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY
+  if (!apiKey) return null
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'models/text-embedding-004',
+          content: { parts: [{ text: query.slice(0, 2000) }] },
+          taskType: 'RETRIEVAL_QUERY',
+          outputDimensionality: 256,
+        }),
+      },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return (data.embedding?.values as number[]) ?? null
+  } catch {
+    return null
+  }
+}
