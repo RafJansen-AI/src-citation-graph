@@ -1,9 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ClusterPanel } from '../../src/components/ClusterPanel'
 import { useAppStore } from '../../src/store/appStore'
 import type { GraphData } from '../../src/lib/types'
+import { downloadFile } from '../../src/lib/export'
+
+vi.mock('../../src/lib/export', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../src/lib/export')>()
+  return { ...actual, downloadFile: vi.fn() }
+})
 
 const mockGraph: GraphData = {
   nodes: [{ id: 'p1', title: 'Test Paper', year: 2020, authors: [], focusArea: 'AI', tldr: '', clusterId: 999, citationCount: 1 }],
@@ -52,6 +58,37 @@ describe('ClusterPanel', () => {
     const toggleBtn = screen.getByRole('button', { name: /hide/i })
     await user.click(toggleBtn)
     expect(useAppStore.getState().hiddenClusterIds).toContain(999)
+  })
+
+  it('shows export buttons when a cluster is selected', () => {
+    useAppStore.setState({ selectedCluster: mockGraph.clusters[0] })
+    render(<ClusterPanel graph={mockGraph} />)
+    expect(screen.getByRole('button', { name: /bibtex/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /markdown/i })).toBeInTheDocument()
+  })
+
+  it('calls downloadFile when BibTeX button is clicked', async () => {
+    const user = userEvent.setup()
+    useAppStore.setState({ selectedCluster: mockGraph.clusters[0] })
+    render(<ClusterPanel graph={mockGraph} />)
+    await user.click(screen.getByRole('button', { name: /bibtex/i }))
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.stringContaining('@article'),
+      expect.stringMatching(/\.bib$/),
+      'text/plain',
+    )
+  })
+
+  it('calls downloadFile when Markdown button is clicked', async () => {
+    const user = userEvent.setup()
+    useAppStore.setState({ selectedCluster: mockGraph.clusters[0] })
+    render(<ClusterPanel graph={mockGraph} />)
+    await user.click(screen.getByRole('button', { name: /markdown/i }))
+    expect(downloadFile).toHaveBeenCalledWith(
+      expect.stringContaining('# '),
+      expect.stringMatching(/\.md$/),
+      'text/markdown',
+    )
   })
 
   it('shows author cluster breakdown when selectedAuthorId is set', () => {
