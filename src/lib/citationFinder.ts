@@ -84,7 +84,7 @@ export function findRelevantPapers(
     .map(x => x.paper)
 }
 
-/** Embeds a query string using Google's text-embedding-004 model.
+/** Embeds a query string using the same model as the pipeline (gemini-embedding-001).
  *  Requires VITE_GOOGLE_API_KEY to be set in the environment.
  *  Returns null if the key is missing or the call fails.
  */
@@ -94,12 +94,12 @@ export async function embedQuery(query: string): Promise<number[] | null> {
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'models/text-embedding-004',
+          model: 'models/gemini-embedding-001',
           content: { parts: [{ text: query.slice(0, 2000) }] },
           taskType: 'RETRIEVAL_QUERY',
           outputDimensionality: 256,
