@@ -26,3 +26,4 @@ dist-ssr
 # App-specific
 .env
 public/data/raw/
+public/data/embeddings.json

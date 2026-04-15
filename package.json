@@ -13,7 +13,8 @@
     "fetch-data": "tsx scripts/fetchData.ts",
     "detect-clusters": "tsx scripts/detectClusters.ts",
     "summarize-clusters": "tsx --env-file=.env scripts/summarizeClusters.ts",
-    "pipeline": "npm run fetch-data && npm run detect-clusters && npm run summarize-clusters"
+    "embed-papers": "tsx --env-file=.env scripts/embedPapers.ts",
+    "pipeline": "npm run fetch-data && npm run detect-clusters && npm run summarize-clusters && npm run embed-papers"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
