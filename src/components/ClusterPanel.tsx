@@ -1,9 +1,9 @@
 import { useAppStore } from '../store/appStore'
-import type { GraphData } from '../lib/types'
+import type { GraphData, Paper } from '../lib/types'
 import { sharedPapers } from '../lib/coauthorGraph'
 import { buildClusterThemeMap, CLUSTER_LABEL_TO_THEME, SRC_THEME_COLORS } from '../lib/srcThemes'
 import { getClusterName } from '../lib/clusterNames'
-import { toBibtex, toMarkdown, downloadFile } from '../lib/export'
+import { ExportButtons } from './ExportButtons'
 
 const aside = "w-80 shrink-0 border-l p-4 overflow-y-auto"
 const asideStyle = { background: 'var(--bg-surface)', borderColor: 'var(--border)' }
@@ -67,6 +67,18 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
       for (const a of node.authors) authorNames.set(a.authorId, a.name)
     }
 
+    const pathPaperMap = new Map<string, Paper>()
+    for (let i = 0; i < coauthorPath.length - 1; i++) {
+      for (const p of sharedPapers(graph.nodes, coauthorPath[i], coauthorPath[i + 1])) {
+        pathPaperMap.set(p.id, p)
+      }
+    }
+    const pathPapers = [...pathPaperMap.values()]
+    // coauthorPath stores author names directly
+    const pathLabel = coauthorPath.length >= 2
+      ? `${coauthorPath[0]} — ${coauthorPath[coauthorPath.length - 1]}`
+      : 'Co-authorship Path'
+
     function closePath() {
       setCoauthorPath([])
       setCoauthorNoPath(false)
@@ -80,9 +92,10 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No co-authorship connection found.</p>
         ) : (
           <>
-            <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>
               {coauthorPath.length - 1} degree{coauthorPath.length !== 2 ? 's' : ''} of separation
             </p>
+            <ExportButtons papers={pathPapers} label={pathLabel} />
             <ol className="space-y-4">
               {coauthorPath.map((authorId, i) => {
                 const name = authorNames.get(authorId) ?? authorId
@@ -144,6 +157,7 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
         </button>
         <h2 className="font-semibold mb-1 text-sm" style={{ color: 'var(--text-primary)' }}>{authorName}</h2>
         <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{authorPapers.length} papers in the network</p>
+        <ExportButtons papers={authorPapers} label={authorName} />
         <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Research clusters:</p>
         <ul className="space-y-1">
           {[...clusterCounts.entries()]
@@ -179,31 +193,10 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
         </div>
         <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{selectedCluster.summary || 'No summary yet.'}</p>
         <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>{papers.length} papers</p>
-        <div className="flex gap-2 mb-3">
-          <button
-            aria-label="Export BibTeX"
-            onClick={() => {
-              const slug = (selectedCluster.name ?? selectedCluster.label).replace(/\s+/g, '-').toLowerCase()
-              downloadFile(toBibtex(papers), `src-${slug}.bib`, 'text/plain')
-            }}
-            className="text-xs px-2 py-1 rounded border cursor-pointer"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
-          >
-            ↓ BibTeX
-          </button>
-          <button
-            aria-label="Export Markdown"
-            onClick={() => {
-              const name = selectedCluster.name ?? selectedCluster.label
-              const slug = name.replace(/\s+/g, '-').toLowerCase()
-              downloadFile(toMarkdown(papers, name), `src-${slug}.md`, 'text/markdown')
-            }}
-            className="text-xs px-2 py-1 rounded border cursor-pointer"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
-          >
-            ↓ Markdown
-          </button>
-        </div>
+        <ExportButtons
+          papers={papers}
+          label={clusterLabel(selectedCluster.id, selectedCluster.label, selectedCluster.name)}
+        />
         <ul className="space-y-1">
           {papers.slice(0, 15).map(p => (
             <li key={p.id}

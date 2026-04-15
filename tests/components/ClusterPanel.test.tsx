@@ -30,7 +30,7 @@ const mockGraphWithAuthor: GraphData = {
 }
 
 beforeEach(() => {
-  useAppStore.setState({ selectedPaper: null, selectedCluster: null, selectedAuthorId: null, hiddenClusterIds: [] })
+  useAppStore.setState({ selectedPaper: null, selectedCluster: null, selectedAuthorId: null, hiddenClusterIds: [], coauthorPath: [], coauthorNoPath: false })
 })
 
 describe('ClusterPanel', () => {
@@ -89,6 +89,32 @@ describe('ClusterPanel', () => {
       expect.stringMatching(/\.md$/),
       'text/markdown',
     )
+  })
+
+  it('shows export buttons in author view', () => {
+    useAppStore.setState({ selectedAuthorId: 'Test Researcher' })
+    const graphWithAuthor: GraphData = {
+      ...mockGraph,
+      nodes: [{ ...mockGraph.nodes[0], authors: [{ authorId: 'A1', name: 'Test Researcher' }], clusterId: 999 }],
+    }
+    render(<ClusterPanel graph={graphWithAuthor} />)
+    expect(screen.getByRole('button', { name: /bibtex/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /markdown/i })).toBeInTheDocument()
+  })
+
+  it('shows export buttons in co-authorship path view', () => {
+    const sharedGraph: GraphData = {
+      nodes: [
+        { id: 'p1', title: 'Shared Paper', year: 2020,
+          authors: [{ authorId: 'A1', name: 'Alice' }, { authorId: 'A2', name: 'Bob' }],
+          focusArea: 'Other', tldr: '', clusterId: 0, citationCount: 5 },
+      ],
+      edges: [], clusters: [], generatedAt: '2024-01-01T00:00:00Z',
+    }
+    useAppStore.setState({ coauthorPath: ['Alice', 'Bob'], coauthorNoPath: false })
+    render(<ClusterPanel graph={sharedGraph} />)
+    expect(screen.getByRole('button', { name: /bibtex/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /markdown/i })).toBeInTheDocument()
   })
 
   it('shows author cluster breakdown when selectedAuthorId is set', () => {
