@@ -164,7 +164,13 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
             .sort((a, b) => b[1] - a[1])
             .map(([clusterId, count]) => {
               const cluster = clusterById.get(clusterId)
-              if (!cluster) return null
+              if (!cluster) return (
+                <li key={clusterId} className="p-2 flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: '#6B7280' }} />
+                  <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-muted)' }}>Unclustered</span>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{count}</span>
+                </li>
+              )
               return (
                 <li key={clusterId} onClick={() => setSelectedCluster(cluster)}
                     className="cursor-pointer p-2 rounded flex items-center gap-2"
