@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useGraphData } from './hooks/useGraphData'
 import { CitationGraph } from './components/CitationGraph'
 import { ClusterPanel } from './components/ClusterPanel'
+import { CitationFinderPanel } from './components/CitationFinderPanel'
 import { ResearcherSearch } from './components/ResearcherSearch'
 import { SearchBar } from './components/SearchBar'
 import { SRC_THEME_COLORS, SRC_THEMES } from './lib/srcThemes'
@@ -9,6 +11,7 @@ import { useAppStore } from './store/appStore'
 export default function App() {
   const { data, loading, error } = useGraphData()
   const { theme, toggleTheme } = useAppStore()
+  const [showCitationFinder, setShowCitationFinder] = useState(false)
 
   if (loading) return (
     <div data-theme={theme} className="flex items-center justify-center h-screen text-sm"
@@ -40,6 +43,17 @@ export default function App() {
           {data.nodes.length} papers · {data.edges.length} citations
         </span>
         <button
+          onClick={() => setShowCitationFinder(v => !v)}
+          className="text-xs px-2 py-1 rounded border cursor-pointer"
+          style={{
+            borderColor: showCitationFinder ? 'var(--text-secondary)' : 'var(--border)',
+            color: showCitationFinder ? 'var(--text-primary)' : 'var(--text-secondary)',
+            background: showCitationFinder ? 'var(--bg-elevated)' : 'transparent',
+          }}
+        >
+          Who should I cite?
+        </button>
+        <button
           onClick={toggleTheme}
           aria-label="Toggle theme"
           className="ml-auto text-xs px-2 py-1 rounded border cursor-pointer"
@@ -54,7 +68,10 @@ export default function App() {
         <div className="flex-1 relative">
           <CitationGraph graph={data} focusAreaColors={focusAreaColors} />
         </div>
-        <ClusterPanel graph={data} />
+        {showCitationFinder
+          ? <CitationFinderPanel graph={data} onClose={() => setShowCitationFinder(false)} />
+          : <ClusterPanel graph={data} />
+        }
       </main>
     </div>
   )
