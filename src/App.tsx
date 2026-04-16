@@ -38,7 +38,7 @@ export default function App() {
          style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       <header className="px-4 py-2 flex items-center gap-4 border-b"
               style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
-        <h1 className="font-bold text-lg">SRC Citation Graph</h1>
+        <h1 className="font-bold text-lg">SRC Research Nexus</h1>
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
           {data.nodes.length} papers · {data.edges.length} citations
         </span>

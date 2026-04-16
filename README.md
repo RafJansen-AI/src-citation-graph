@@ -1,4 +1,4 @@
-# SRC Citation Graph
+# SRC Research Nexus
 
 Interactive citation network for Stockholm Resilience Centre researchers (~160 staff).
 Visualizes publication relationships as a force-directed graph with AI-powered cluster summaries.
