@@ -15,17 +15,23 @@ Fix two related visual problems:
 
 ## Section 1: Node Coloring
 
-**Current:** `CitationGraph.tsx` colors nodes via `clusterThemeMap.get(paper.clusterId)` → `SRC_THEME_COLORS`.
+**Current:** `CitationGraph.tsx` colors nodes via `clusterThemeMap.get(paper.clusterId)` → `SRC_THEME_COLORS` (lines 126–127). The theme filter at line 92 also uses `clusterThemeMap.get(n.clusterId)`.
 
-**New:** Color each node directly from its own `focusArea`:
+**New:** Both the color and the filter use the paper's own `focusArea` (an OpenAlex concept string like `"Environmental science"`) via `CLUSTER_LABEL_TO_THEME`:
 ```typescript
-const theme = CLUSTER_LABEL_TO_THEME[paper.focusArea] ?? 'Other'
-const color = SRC_THEME_COLORS[theme] ?? SRC_THEME_COLORS['Other']
+// node color (line 126–127)
+const theme = CLUSTER_LABEL_TO_THEME[p.focusArea] ?? 'Other'
+const themeColor = focusAreaColors[theme] ?? '#6B7280'
+
+// theme filter (line 92)
+nodes = nodes.filter(n => selectedThemes.has(CLUSTER_LABEL_TO_THEME[n.focusArea] ?? 'Other'))
 ```
+
+`CLUSTER_LABEL_TO_THEME` must be imported in `CitationGraph.tsx`. Papers whose `focusArea` is not in the map show as grey (`'Other'`).
 
 The sidebar cluster dots keep their cluster-based color (domain: distinguishing clusters from each other).
 
-**File:** `src/components/CitationGraph.tsx` — node color computation only.
+**File:** `src/components/CitationGraph.tsx` — node color (line 126) and theme filter (line 92).
 
 ---
 
@@ -66,9 +72,9 @@ Update the `pipeline` script in `package.json`.
 
 | File | Change |
 |------|--------|
-| `src/components/CitationGraph.tsx` | Color nodes by own `focusArea`, not cluster |
-| `scripts/detectClusters.ts` | Replace Louvain with k-means on embeddings |
-| `package.json` | Reorder pipeline script |
+| `src/components/CitationGraph.tsx` | Color nodes by own `focusArea`, update theme filter |
+| `scripts/detectClusters.ts` | Replace Louvain with k-means on embeddings; read `clusterCount` from config |
+| `package.json` | Reorder pipeline script; add `ml-kmeans` to dependencies |
 | `data/config.json` | Add `clusterCount` field (default: 15) |
 
 ## Files Unchanged
