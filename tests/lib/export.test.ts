@@ -55,6 +55,28 @@ describe('toBibtex', () => {
   it('returns empty string for empty paper list', () => {
     expect(toBibtex([])).toBe('')
   })
+
+  it('includes journal field when present', () => {
+    const paper = makePaper({ id: 'p1', journal: 'Nature Sustainability' })
+    expect(toBibtex([paper])).toContain('journal = {Nature Sustainability}')
+  })
+
+  it('includes volume, number, and pages when present', () => {
+    const paper = makePaper({ id: 'p1', volume: '5', issue: '2', pages: '100–110' })
+    const output = toBibtex([paper])
+    expect(output).toContain('volume = {5}')
+    expect(output).toContain('number = {2}')
+    expect(output).toContain('pages = {100--110}')
+  })
+
+  it('omits journal/volume/number/pages when absent', () => {
+    const paper = makePaper({ id: 'p1', journal: undefined, volume: undefined, issue: undefined, pages: undefined })
+    const output = toBibtex([paper])
+    expect(output).not.toContain('journal =')
+    expect(output).not.toContain('volume =')
+    expect(output).not.toContain('number =')
+    expect(output).not.toContain('pages =')
+  })
 })
 
 describe('toMarkdown', () => {

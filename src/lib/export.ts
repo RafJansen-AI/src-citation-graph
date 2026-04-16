@@ -23,11 +23,16 @@ export function toBibtex(papers: Paper[]): string {
       ? p.externalUrl.replace('https://doi.org/', '')
       : null
 
+    const pagesFormatted = p.pages?.replace('–', '--')
     return [
       `@article{${key},`,
       `  author = {${escapeLatex(authors)}},`,
       `  title = {${escapeLatex(p.title)}},`,
       `  year = {${p.year}},`,
+      p.journal ? `  journal = {${escapeLatex(p.journal)}},` : null,
+      p.volume  ? `  volume = {${p.volume}},`   : null,
+      p.issue   ? `  number = {${p.issue}},`    : null,
+      pagesFormatted ? `  pages = {${pagesFormatted}},` : null,
       doi ? `  doi = {${doi}},` : null,
       `  note = {Stockholm Resilience Centre}`,
       `}`,
