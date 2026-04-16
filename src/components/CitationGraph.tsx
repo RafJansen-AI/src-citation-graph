@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
-import { buildClusterThemeMap } from '../lib/srcThemes'
+import { CLUSTER_LABEL_TO_THEME } from '../lib/srcThemes'
 
 const DIMMED = '#1F2937'
 const EDGE_DIM = '#1F2937'
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, selectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas } = useAppStore()
+  const { setSelectedPaper, selectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas, coauthorPath } = useAppStore()
   const fgRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -48,11 +48,6 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     fg.d3Force('charge')?.strength(-120)
     fg.d3Force('link')?.distance(60)
   }, [])
-
-  const clusterThemeMap = useMemo(
-    () => buildClusterThemeMap(graph.clusters),
-    [graph.clusters]
-  )
 
   const filteredGraph = useMemo(() => {
     let nodes = graph.nodes
@@ -82,14 +77,14 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     }
 
     // Year range filter
-    if (yearRange[0] > 1973 || yearRange[1] < 2026) {
+    if (yearRange[0] > 2007 || yearRange[1] < 2026) {
       nodes = nodes.filter(n => n.year >= yearRange[0] && n.year <= yearRange[1])
     }
 
     // SRC theme filter (multi-select) — keyed by clusterId, not focusArea
     if (selectedFocusAreas.length > 0) {
       const selectedThemes = new Set(selectedFocusAreas)
-      nodes = nodes.filter(n => selectedThemes.has(clusterThemeMap.get(n.clusterId) ?? 'Other'))
+      nodes = nodes.filter(n => selectedThemes.has(CLUSTER_LABEL_TO_THEME[n.focusArea] ?? 'Other'))
     }
 
     const nodeIds = new Set(nodes.map(n => n.id))
@@ -97,7 +92,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
       e => nodeIds.has(resolveId(e.source)) && nodeIds.has(resolveId(e.target))
     )
     return { nodes, links }
-  }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas, clusterThemeMap])
+  }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas])
 
   // Directional neighbor sets for selected-paper highlighting
   // citesIds: papers the selected paper cites (outgoing edges from selected)
@@ -121,7 +116,9 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
   const nodeColor = useCallback((node: any) => {
     const p = node as Paper
     if (highlightedPath.includes(p.id)) return '#FBBF24'
-    const theme = clusterThemeMap.get(p.clusterId) ?? 'Other'
+    // Coauthor path active: dim everything except the shared (highlighted) papers
+    if (coauthorPath.length > 0) return DIMMED
+    const theme = CLUSTER_LABEL_TO_THEME[p.focusArea] ?? 'Other'
     const themeColor = focusAreaColors[theme] ?? '#6B7280'
     // Selected-paper: colour by citation direction; dim everything else
     if (selectedPaper) {
@@ -136,7 +133,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     }
     if (selectedCluster && !selectedCluster.paperIds.includes(p.id)) return '#374151'
     return themeColor
-  }, [highlightedPath, selectedPaper, citesIds, citedByIds, selectedAuthorId, selectedCluster, focusAreaColors, clusterThemeMap])
+  }, [highlightedPath, coauthorPath, selectedPaper, citesIds, citedByIds, selectedAuthorId, selectedCluster, focusAreaColors])
 
   const nodeLabel = useCallback((node: any) => {
     const p = node as Paper
