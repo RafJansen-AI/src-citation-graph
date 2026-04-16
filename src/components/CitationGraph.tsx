@@ -118,8 +118,8 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     if (highlightedPath.includes(p.id)) return '#FBBF24'
     // Coauthor path active: dim everything except the shared (highlighted) papers
     if (coauthorPath.length > 0) return DIMMED
-    const theme = CLUSTER_LABEL_TO_THEME[p.focusArea] ?? 'Other'
-    const themeColor = focusAreaColors[theme] ?? '#6B7280'
+    const srcTheme = CLUSTER_LABEL_TO_THEME[p.focusArea] ?? 'Other'
+    const themeColor = focusAreaColors[srcTheme] ?? '#6B7280'
     // Selected-paper: colour by citation direction; dim everything else
     if (selectedPaper) {
       if (p.id === selectedPaper.id) return '#FFFFFF'
