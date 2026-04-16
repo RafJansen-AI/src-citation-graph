@@ -14,6 +14,10 @@ export interface Paper {
   clusterId: number     // -1 until detectClusters.ts runs
   citationCount?: number
   externalUrl?: string
+  journal?: string
+  volume?: string
+  issue?: string
+  pages?: string
 }
 
 export interface GraphEdge {
@@ -25,7 +29,8 @@ export interface GraphEdge {
 export interface Cluster {
   id: number
   label: string
-  summary: string       // Claude-generated narrative; empty until summarizeClusters.ts runs
+  name?: string         // short curated title; set by summarizeClusters.ts
+  summary: string       // Gemini-generated narrative; empty until summarizeClusters.ts runs
   color: string         // hex
   paperIds: string[]
 }

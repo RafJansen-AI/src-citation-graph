@@ -2,7 +2,7 @@ const BASE = 'https://api.openalex.org'
 const WORK_FIELDS = [
   'id', 'title', 'publication_year', 'authorships',
   'abstract_inverted_index', 'concepts', 'cited_by_count',
-  'ids', 'referenced_works',
+  'ids', 'referenced_works', 'primary_location', 'biblio',
 ].join(',')
 
 export interface OAWork {
@@ -15,6 +15,17 @@ export interface OAWork {
   cited_by_count: number
   ids: { doi?: string }
   referenced_works: string[]
+  primary_location?: {
+    source?: {
+      display_name?: string
+    }
+  } | null
+  biblio?: {
+    volume?: string | null
+    issue?: string | null
+    first_page?: string | null
+    last_page?: string | null
+  } | null
 }
 
 export interface OAInstitution {
@@ -56,7 +67,7 @@ export class OpenAlexClient {
     let fetched = 0
 
     while (cursor) {
-      const url = `${BASE}/works?filter=authorships.institutions.id:${institutionId}&select=${WORK_FIELDS}&per_page=200&cursor=${cursor}`
+      const url = `${BASE}/works?filter=type:article,from_publication_date:2007-01-01,authorships.institutions.id:${institutionId}&select=${WORK_FIELDS}&per_page=200&cursor=${cursor}`
       const data = await this.get(url)
       const works: OAWork[] = data.results ?? []
       for (const w of works) yield w

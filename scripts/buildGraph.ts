@@ -1,8 +1,24 @@
+import { readFileSync } from 'fs'
 import type { GraphData, Paper, GraphEdge } from '../src/lib/types'
 import { OpenAlexClient, type OAWork } from './openAlex'
 
+function loadExcludedAuthorIds(): Set<string> {
+  try {
+    const cfg = JSON.parse(readFileSync('data/config.json', 'utf-8'))
+    return new Set<string>((cfg.excludedAuthorIds ?? []).map((id: string) => OpenAlexClient.workId(id)))
+  } catch { return new Set() }
+}
+
 export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> {
-  const validWorks = works.filter(w => w.id != null && w.title != null)
+  const excludedAuthorIds = loadExcludedAuthorIds()
+  const validWorks = works.filter(w => {
+    if (w.id == null || w.title == null) return false
+    if (excludedAuthorIds.size === 0) return true
+    // Drop papers where every authorship traces back to an excluded author
+    // (i.e. the paper is only in the dataset because of a misattributed affiliation)
+    const authorIds = (w.authorships ?? []).map(a => OpenAlexClient.workId(a.author?.id ?? ''))
+    return !authorIds.some(id => excludedAuthorIds.has(id))
+  })
   const srcIds = new Set(validWorks.map(w => OpenAlexClient.workId(w.id)))
 
   const nodes: Paper[] = validWorks.map(w => {
@@ -25,6 +41,14 @@ export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> 
       externalUrl: doi
         ? `https://doi.org/${doi}`
         : `https://openalex.org/${id}`,
+      journal: w.primary_location?.source?.display_name || undefined,
+      volume: w.biblio?.volume ?? undefined,
+      issue: w.biblio?.issue ?? undefined,
+      pages: (w.biblio?.first_page && w.biblio?.last_page)
+        ? `${w.biblio.first_page}\u2013${w.biblio.last_page}`
+        : w.biblio?.first_page
+          ? w.biblio.first_page
+          : undefined,
     }
   })
 

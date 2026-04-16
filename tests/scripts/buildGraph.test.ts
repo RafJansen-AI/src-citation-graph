@@ -15,6 +15,21 @@ const makeWork = (id: string, overrides: Partial<OAWork> = {}): OAWork => ({
   ...overrides,
 })
 
+function makeSimpleWork(overrides: Partial<OAWork> = {}): OAWork {
+  return {
+    id: 'https://openalex.org/W1',
+    title: 'Test Paper',
+    publication_year: 2020,
+    authorships: [],
+    abstract_inverted_index: null,
+    concepts: [],
+    cited_by_count: 5,
+    ids: { doi: '10.1000/xyz' },
+    referenced_works: [],
+    ...overrides,
+  }
+}
+
 describe('buildGraph', () => {
   it('creates one node per work', () => {
     const works = [makeWork('W1'), makeWork('W2')]
@@ -67,5 +82,49 @@ describe('buildGraph', () => {
     ]
     const { edges } = buildGraph(works)
     expect(edges).toHaveLength(1)
+  })
+})
+
+describe('buildGraph journal fields', () => {
+  it('maps journal name from primary_location.source.display_name', () => {
+    const work = makeSimpleWork({
+      primary_location: { source: { display_name: 'Nature' } },
+    })
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].journal).toBe('Nature')
+  })
+
+  it('maps volume and issue from biblio', () => {
+    const work = makeSimpleWork({
+      biblio: { volume: '42', issue: '3', first_page: '100', last_page: '115' },
+    })
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].volume).toBe('42')
+    expect(nodes[0].issue).toBe('3')
+  })
+
+  it('maps pages as "first_page–last_page" with en-dash', () => {
+    const work = makeSimpleWork({
+      biblio: { volume: '1', issue: '1', first_page: '10', last_page: '20' },
+    })
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].pages).toBe('10\u201320')
+  })
+
+  it('omits pages when first_page is absent', () => {
+    const work = makeSimpleWork({
+      biblio: { volume: '1', issue: '1', first_page: null, last_page: null },
+    })
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].pages).toBeUndefined()
+  })
+
+  it('leaves journal/volume/issue/pages undefined when fields absent', () => {
+    const work = makeSimpleWork()
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].journal).toBeUndefined()
+    expect(nodes[0].volume).toBeUndefined()
+    expect(nodes[0].issue).toBeUndefined()
+    expect(nodes[0].pages).toBeUndefined()
   })
 })
