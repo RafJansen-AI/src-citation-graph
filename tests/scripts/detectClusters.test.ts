@@ -82,4 +82,20 @@ describe('detectAndAnnotate (k-means)', () => {
       .filter(n => n.clusterId !== -1)
       .forEach(n => expect(coveredIds.has(n.id)).toBe(true))
   })
+
+  it('clamps k to the number of available papers', () => {
+    const graph = makeGraph(3)
+    const embs: Record<string, number[]> = {}
+    graph.nodes.forEach((n, i) => { embs[n.id] = [i, 0] })
+    // k=50 with only 3 papers — should not throw, effectiveK is clamped to 3
+    // All 3 papers will be in their own cluster (size 1), all collapse to -1 via MIN_CLUSTER_SIZE
+    expect(() => detectAndAnnotate(graph, embs, 50)).not.toThrow()
+  })
+
+  it('handles empty embeddings — all papers unclustered', () => {
+    const graph = makeGraph(5)
+    const result = detectAndAnnotate(graph, {}, 2)
+    expect(result.nodes.every(n => n.clusterId === -1)).toBe(true)
+    expect(result.clusters).toHaveLength(0)
+  })
 })

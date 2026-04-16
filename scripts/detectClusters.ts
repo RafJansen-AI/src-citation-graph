@@ -46,7 +46,7 @@ export function detectAndAnnotate(
 
   if (effectiveK > 0 && withEmb.length > 0) {
     const matrix = withEmb.map(n => embs[n.id])
-    const result = kmeans(matrix, effectiveK, { initialization: 'kmeans++', seed: 42 })
+    const result: { clusters: number[] } = kmeans(matrix, effectiveK, { initialization: 'kmeans++', seed: 42 })
     for (let i = 0; i < withEmb.length; i++) {
       nodeCommId[withEmb[i].id] = result.clusters[i]
     }
