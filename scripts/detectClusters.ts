@@ -1,66 +1,80 @@
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import Graph from 'graphology'
-import louvain from 'graphology-communities-louvain'
+import { kmeans } from 'ml-kmeans'
 import type { GraphData, Cluster } from '../src/lib/types'
 
 const MIN_CLUSTER_SIZE = 5
 
-// Fallback palette — overridden by concept-derived colors in config.json when available
 const COLORS = ['#4F46E5','#16A34A','#DC2626','#D97706','#0891B2','#7C3AED','#DB2777','#059669']
 
-interface Config { conceptColors: Record<string, string> }
+interface Config { conceptColors: Record<string, string>; clusterCount?: number }
 
-function loadConceptColors(): Record<string, string> {
-  try {
-    const cfg: Config = JSON.parse(readFileSync('data/config.json', 'utf-8'))
-    return cfg.conceptColors ?? {}
-  } catch { return {} }
+function loadConfig(): Config {
+  try { return JSON.parse(readFileSync('data/config.json', 'utf-8')) }
+  catch { return { conceptColors: {} } }
 }
 
-export function detectAndAnnotate(graph: GraphData): GraphData {
-  // Build graphology graph
-  const g = new Graph({ type: 'undirected', multi: false })
-  for (const node of graph.nodes) g.addNode(node.id)
-  for (const edge of graph.edges) {
-    if (!g.hasEdge(edge.source, edge.target) && !g.hasEdge(edge.target, edge.source)) {
-      g.addEdge(edge.source, edge.target)
+/**
+ * detectAndAnnotate — public for testing.
+ * @param graph       GraphData with nodes/edges (clusters will be replaced)
+ * @param embeddings  Optional: paperId → float[] map. If omitted, loaded from public/data/embeddings.json.
+ * @param k           Optional: number of clusters. If omitted, read from config (default 15).
+ */
+export function detectAndAnnotate(
+  graph: GraphData,
+  embeddings?: Record<string, number[]>,
+  k?: number,
+): GraphData {
+  // Load embeddings from disk if not injected
+  let embs: Record<string, number[]> = embeddings ?? {}
+  if (!embeddings) {
+    try {
+      embs = JSON.parse(readFileSync(join(process.cwd(), 'public/data/embeddings.json'), 'utf-8'))
+    } catch { /* no embeddings yet — all papers will be unclustered */ }
+  }
+
+  const config = loadConfig()
+  const numClusters = k ?? config.clusterCount ?? 15
+
+  // Split papers into those with/without embeddings
+  const withEmb = graph.nodes.filter(n => embs[n.id])
+  const withoutEmb = graph.nodes.filter(n => !embs[n.id])
+
+  // Run k-means (need at least k papers)
+  const effectiveK = Math.min(numClusters, withEmb.length)
+  const nodeCommId: Record<string, number> = {}
+
+  if (effectiveK > 0 && withEmb.length > 0) {
+    const matrix = withEmb.map(n => embs[n.id])
+    const result = kmeans(matrix, effectiveK, { initialization: 'kmeans++', seed: 42 })
+    for (let i = 0; i < withEmb.length; i++) {
+      nodeCommId[withEmb[i].id] = result.clusters[i]
     }
   }
 
-  // Run proper Louvain community detection
-  const communities = louvain(g)
+  // Papers without embeddings → clusterId -1
+  for (const n of withoutEmb) nodeCommId[n.id] = -1
 
-  // Re-number community IDs to be 0-based integers
-  const communityMap = new Map<string | number, number>()
-  let nextId = 0
-  const nodeCommId: Record<string, number> = {}
-  for (const nodeId of graph.nodes.map(n => n.id)) {
-    const raw = communities[nodeId] ?? 0
-    if (!communityMap.has(raw)) communityMap.set(raw, nextId++)
-    nodeCommId[nodeId] = communityMap.get(raw)!
-  }
+  const nodes = graph.nodes.map(n => ({ ...n, clusterId: nodeCommId[n.id] ?? -1 }))
 
-  const nodes = graph.nodes.map(n => ({ ...n, clusterId: nodeCommId[n.id] ?? 0 }))
-
-  // Group papers by cluster
+  // Group by clusterId
   const clusterPapers = new Map<number, string[]>()
   for (const n of nodes) {
+    if (n.clusterId === -1) continue
     if (!clusterPapers.has(n.clusterId)) clusterPapers.set(n.clusterId, [])
     clusterPapers.get(n.clusterId)!.push(n.id)
   }
 
-  // Assign small clusters to cluster -1 (ungrouped)
+  // Collapse small clusters to -1
   const smallIds = new Set<number>()
   for (const [id, paperIds] of clusterPapers) {
     if (paperIds.length < MIN_CLUSTER_SIZE) smallIds.add(id)
   }
-
   const remappedNodes = nodes.map(n =>
     smallIds.has(n.clusterId) ? { ...n, clusterId: -1 } : n
   )
 
-  // Rebuild cluster groups after remap
+  // Rebuild groups after collapse
   const finalGroups = new Map<number, string[]>()
   for (const n of remappedNodes) {
     if (n.clusterId === -1) continue
@@ -68,10 +82,9 @@ export function detectAndAnnotate(graph: GraphData): GraphData {
     finalGroups.get(n.clusterId)!.push(n.id)
   }
 
-  const conceptColors = loadConceptColors()
   const paperById = new Map(remappedNodes.map(n => [n.id, n]))
+  const { conceptColors } = config
 
-  // Build clusters sorted by size descending
   const clusters: Cluster[] = [...finalGroups.entries()]
     .sort((a, b) => b[1].length - a[1].length)
     .map(([id, paperIds], idx) => {
@@ -85,7 +98,7 @@ export function detectAndAnnotate(graph: GraphData): GraphData {
       return { id, label: dominantArea, summary: '', color, paperIds }
     })
 
-  // Deduplicate cluster labels
+  // Deduplicate labels
   const labelCounts = new Map<string, number>()
   for (const c of clusters) {
     const n = (labelCounts.get(c.label) ?? 0) + 1
@@ -99,10 +112,10 @@ export function detectAndAnnotate(graph: GraphData): GraphData {
 async function main() {
   const path = join(process.cwd(), 'public/data/graph.json')
   const graph: GraphData = JSON.parse(readFileSync(path, 'utf-8'))
-  console.log(`Detecting clusters in ${graph.nodes.length} nodes, ${graph.edges.length} edges…`)
+  console.log(`Clustering ${graph.nodes.length} nodes…`)
   const annotated = detectAndAnnotate(graph)
   const significant = annotated.clusters.filter(c => c.id !== -1)
-  console.log(`Found ${significant.length} clusters (min size ${MIN_CLUSTER_SIZE}, ${annotated.nodes.filter(n => n.clusterId === -1).length} nodes ungrouped)`)
+  console.log(`Found ${significant.length} clusters (${annotated.nodes.filter(n => n.clusterId === -1).length} nodes ungrouped)`)
   significant.forEach(c => console.log(`  [${c.id}] ${c.label}: ${c.paperIds.length} papers`))
   writeFileSync(path, JSON.stringify(annotated, null, 2))
   console.log('Updated public/data/graph.json')

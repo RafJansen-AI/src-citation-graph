@@ -1,5 +1,9 @@
 {
   "institutionName": "Stockholm Resilience Centre",
+  "excludedAuthorIds": [
+    "A5063021701"
+  ],
+  "clusterCount": 15,
   "conceptColors": {
     "Environmental science": "#16A34A",
     "Ecology": "#059669",
