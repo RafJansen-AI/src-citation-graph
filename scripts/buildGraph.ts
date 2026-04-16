@@ -41,7 +41,7 @@ export function buildGraph(works: OAWork[]): Pick<GraphData, 'nodes' | 'edges'> 
       externalUrl: doi
         ? `https://doi.org/${doi}`
         : `https://openalex.org/${id}`,
-      journal: w.primary_location?.source?.display_name || undefined,
+      journal: w.primary_location?.source?.display_name ?? undefined,
       volume: w.biblio?.volume ?? undefined,
       issue: w.biblio?.issue ?? undefined,
       pages: (w.biblio?.first_page && w.biblio?.last_page)

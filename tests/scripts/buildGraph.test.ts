@@ -119,6 +119,14 @@ describe('buildGraph journal fields', () => {
     expect(nodes[0].pages).toBeUndefined()
   })
 
+  it('uses only first_page when last_page is absent', () => {
+    const work = makeSimpleWork({
+      biblio: { volume: '1', issue: '1', first_page: '5', last_page: null },
+    })
+    const { nodes } = buildGraph([work])
+    expect(nodes[0].pages).toBe('5')
+  })
+
   it('leaves journal/volume/issue/pages undefined when fields absent', () => {
     const work = makeSimpleWork()
     const { nodes } = buildGraph([work])
