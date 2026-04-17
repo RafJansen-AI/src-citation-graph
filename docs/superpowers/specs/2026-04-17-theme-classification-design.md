@@ -70,8 +70,8 @@ fetch-data → embed-papers → classify-themes → detect-clusters → summariz
 |------|--------|
 | `scripts/classifyThemes.ts` | New — embeds theme descriptions, assigns srcTheme by cosine similarity |
 | `src/lib/types.ts` | Add `srcTheme?: string` to Paper interface |
-| `src/lib/srcThemes.ts` | Remove `CLUSTER_LABEL_TO_THEME` export |
 | `src/components/CitationGraph.tsx` | Use `p.srcTheme` / `n.srcTheme` instead of `CLUSTER_LABEL_TO_THEME[...focusArea]` |
+| `src/components/ClusterPanel.tsx` | Line 46 paper detail subtitle: use `srcTheme` instead of `CLUSTER_LABEL_TO_THEME[focusArea]` |
 | `package.json` | Add `classify-themes` script; update `pipeline` script order |
 
 ## Files Unchanged
@@ -79,8 +79,7 @@ fetch-data → embed-papers → classify-themes → detect-clusters → summariz
 - `scripts/embedPapers.ts` — no change needed
 - `scripts/detectClusters.ts` — no change needed
 - `scripts/summarizeClusters.ts` — no change needed
-- `src/components/ClusterPanel.tsx` — no change needed
-- `src/lib/srcThemes.ts` (SRC_THEME_COLORS, SRC_THEMES) — kept as-is
+- `src/lib/srcThemes.ts` — `CLUSTER_LABEL_TO_THEME` is kept (still used internally by `buildClusterThemeMap` for sidebar cluster dot colors); `SRC_THEME_COLORS` and `SRC_THEMES` unchanged
 
 ---
 
