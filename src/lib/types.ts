@@ -18,6 +18,7 @@ export interface Paper {
   volume?: string
   issue?: string
   pages?: string
+  srcTheme?: string     // SRC theme assigned by classifyThemes.ts; undefined until that step runs
 }
 
 export interface GraphEdge {
