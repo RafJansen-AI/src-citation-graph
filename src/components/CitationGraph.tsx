@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import type { GraphData, Paper } from '../lib/types'
 import { useAppStore } from '../store/appStore'
-import { CLUSTER_LABEL_TO_THEME } from '../lib/srcThemes'
 
 const DIMMED = '#1F2937'
 const EDGE_DIM = '#1F2937'
@@ -84,7 +83,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     // SRC theme filter (multi-select) — keyed by clusterId, not focusArea
     if (selectedFocusAreas.length > 0) {
       const selectedThemes = new Set(selectedFocusAreas)
-      nodes = nodes.filter(n => selectedThemes.has(CLUSTER_LABEL_TO_THEME[n.focusArea] ?? 'Other'))
+      nodes = nodes.filter(n => selectedThemes.has(n.srcTheme ?? 'Other'))
     }
 
     const nodeIds = new Set(nodes.map(n => n.id))
@@ -118,7 +117,7 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     if (highlightedPath.includes(p.id)) return '#FBBF24'
     // Coauthor path active: dim everything except the shared (highlighted) papers
     if (coauthorPath.length > 0) return DIMMED
-    const srcTheme = CLUSTER_LABEL_TO_THEME[p.focusArea] ?? 'Other'
+    const srcTheme = p.srcTheme ?? 'Other'
     const themeColor = focusAreaColors[srcTheme] ?? '#6B7280'
     // Selected-paper: colour by citation direction; dim everything else
     if (selectedPaper) {

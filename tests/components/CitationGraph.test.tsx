@@ -12,7 +12,7 @@ vi.mock('react-force-graph-2d', () => ({
 
 const mockGraph: GraphData = {
   nodes: [{ id: 'p1', title: 'Test', year: 2020, authors: [], focusArea: 'AI',
-            tldr: '', clusterId: 0, citationCount: 5 }],
+            tldr: '', clusterId: 0, citationCount: 5, srcTheme: 'Artificial Intelligence' }],
   edges: [], clusters: [], generatedAt: '2024-01-01T00:00:00Z',
 }
 
@@ -36,11 +36,11 @@ describe('CitationGraph', () => {
     const themeFilterGraph: GraphData = {
       nodes: [
         { id: 'p1', title: 'A', year: 2020, authors: [], focusArea: 'Biology',
-          tldr: '', clusterId: 10, citationCount: 5 },
+          tldr: '', clusterId: 10, citationCount: 5, srcTheme: 'Biodiversity & Ecosystems' },
         { id: 'p2', title: 'B', year: 2021, authors: [], focusArea: 'Medicine',
-          tldr: '', clusterId: 20, citationCount: 2 },
+          tldr: '', clusterId: 20, citationCount: 2, srcTheme: 'Health & Wellbeing' },
         { id: 'p3', title: 'C', year: 2022, authors: [], focusArea: 'Business',
-          tldr: '', clusterId: 30, citationCount: 1 },
+          tldr: '', clusterId: 30, citationCount: 1, srcTheme: 'Economic Systems' },
       ],
       edges: [],
       clusters: [
