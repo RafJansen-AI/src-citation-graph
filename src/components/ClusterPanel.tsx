@@ -17,14 +17,8 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     coauthorPath, coauthorNoPath, setCoauthorPath, setCoauthorNoPath,
   } = useAppStore()
 
-  const clusterColorMap = new Map(graph.clusters.map(c => [c.id, c.color]))
-
   function clusterLabel(clusterId: number, rawLabel: string, dataName?: string): string {
     return getClusterName(clusterId, rawLabel, dataName)
-  }
-
-  function themeColor(clusterId: number): string {
-    return clusterColorMap.get(clusterId) ?? '#6B7280'
   }
 
   // Paper detail takes highest priority (direct user click on a node)
@@ -176,7 +170,7 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
                     style={{ background: 'transparent' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColor(clusterId) }} />
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'var(--text-muted)' }} />
                   <span className="text-xs flex-1 truncate" style={{ color: 'var(--text-secondary)' }}>{clusterLabel(clusterId, cluster.label, cluster.name)}</span>
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{count}</span>
                 </li>
@@ -193,7 +187,7 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
       <aside className={aside} style={asideStyle}>
         <button onClick={() => setSelectedCluster(null)} className={backBtn} style={backBtnStyle}>← All clusters</button>
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: themeColor(selectedCluster.id) }} />
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--text-muted)' }} />
           <h2 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{clusterLabel(selectedCluster.id, selectedCluster.label, selectedCluster.name)}</h2>
         </div>
         <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{selectedCluster.summary || 'No summary yet.'}</p>
@@ -231,7 +225,7 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
               <li key={c.id} className={`p-3 rounded border ${hidden ? 'opacity-40' : ''}`}
                   style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: themeColor(c.id) }} />
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: 'var(--text-muted)' }} />
                   <button
                     onClick={() => setSelectedCluster(c)}
                     className="text-sm font-medium text-left hover:underline flex-1 truncate"
