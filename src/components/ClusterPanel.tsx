@@ -1,7 +1,6 @@
 import { useAppStore } from '../store/appStore'
 import type { GraphData, Paper } from '../lib/types'
 import { sharedPapers } from '../lib/coauthorGraph'
-import { buildClusterThemeMap, SRC_THEME_COLORS } from '../lib/srcThemes'
 import { getClusterName } from '../lib/clusterNames'
 import { ExportButtons } from './ExportButtons'
 
@@ -18,14 +17,14 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
     coauthorPath, coauthorNoPath, setCoauthorPath, setCoauthorNoPath,
   } = useAppStore()
 
-  const clusterThemeMap = buildClusterThemeMap(graph.clusters)
+  const clusterColorMap = new Map(graph.clusters.map(c => [c.id, c.color]))
 
   function clusterLabel(clusterId: number, rawLabel: string, dataName?: string): string {
     return getClusterName(clusterId, rawLabel, dataName)
   }
 
   function themeColor(clusterId: number): string {
-    return SRC_THEME_COLORS[clusterThemeMap.get(clusterId) ?? 'Other'] ?? '#6B7280'
+    return clusterColorMap.get(clusterId) ?? '#6B7280'
   }
 
   // Paper detail takes highest priority (direct user click on a node)
