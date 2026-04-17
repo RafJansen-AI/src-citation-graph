@@ -94,7 +94,8 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
   }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas])
 
   useEffect(() => {
-    setVisibleCounts(filteredGraph.nodes.length, filteredGraph.links.length)
+    const totalCitations = filteredGraph.nodes.reduce((sum, n) => sum + ((n as any).citationCount ?? 0), 0)
+    setVisibleCounts(filteredGraph.nodes.length, filteredGraph.links.length, totalCitations)
   }, [filteredGraph, setVisibleCounts])
 
   // Directional neighbor sets for selected-paper highlighting

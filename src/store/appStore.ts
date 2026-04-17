@@ -33,7 +33,8 @@ interface AppState {
   clearFocusAreas: () => void
   visibleNodeCount: number | null  // null until CitationGraph computes first filtered result
   visibleEdgeCount: number | null
-  setVisibleCounts: (nodes: number, edges: number) => void
+  visibleTotalCitations: number | null  // sum of citationCount across visible papers
+  setVisibleCounts: (nodes: number, edges: number, totalCitations: number) => void
 }
 
 export const useAppStore = create<AppState>(set => ({
@@ -52,6 +53,7 @@ export const useAppStore = create<AppState>(set => ({
   selectedFocusAreas: [],
   visibleNodeCount: null,
   visibleEdgeCount: null,
+  visibleTotalCitations: null,
 
   setSelectedPaper: p => set({ selectedPaper: p }),
   setSelectedCluster: c => set({ selectedCluster: c }),
@@ -77,5 +79,5 @@ export const useAppStore = create<AppState>(set => ({
         : [...s.selectedFocusAreas, area],
     })),
   clearFocusAreas: () => set({ selectedFocusAreas: [] }),
-  setVisibleCounts: (nodes, edges) => set({ visibleNodeCount: nodes, visibleEdgeCount: edges }),
+  setVisibleCounts: (nodes, edges, totalCitations) => set({ visibleNodeCount: nodes, visibleEdgeCount: edges, visibleTotalCitations: totalCitations }),
 }))
