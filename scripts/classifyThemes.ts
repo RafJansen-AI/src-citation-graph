@@ -122,7 +122,8 @@ async function main() {
   console.log('Updated public/data/graph.json')
 }
 
-// Only run when executed directly (not when imported by tests)
+// Guard needed because tests import classifyPapers from this module.
+// Unlike embedPapers.ts, we can't call main() unconditionally.
 if (process.argv[1] && process.argv[1].endsWith('classifyThemes.ts')) {
   main().catch(e => { console.error(e); process.exit(1) })
 }
