@@ -5,17 +5,17 @@ import type { GraphData, Paper } from '../src/lib/types'
 
 const THEMES: Record<string, string> = {
   'Planetary Boundaries':
-    'Earth system processes, planetary boundaries, climate change, biosphere integrity, biogeochemical flows, land-system change, global tipping points',
+    'Planetary boundaries framework, safe operating space, Earth system tipping points, climate change, biogeochemical flows, land-system change, ocean acidification, freshwater cycles, nitrogen and phosphorus, Anthropocene, navigating the Anthropocene, human-dominated Earth system',
   'Biodiversity & Ecosystems':
-    'Biodiversity conservation, ecosystem services, species loss, habitat degradation, marine and terrestrial ecology, nature-based solutions',
+    'Biosphere integrity and functioning, biodiversity, ecosystem services, species and genetic diversity, habitat loss, marine and terrestrial ecology, nature-based solutions, pollination, functional diversity',
   'Social-Ecological Systems':
-    'Social-ecological systems, resilience thinking, adaptive management, coupled human-nature systems, transformation, panarchy',
+    'Social-ecological systems, resilience thinking, panarchy, adaptive management, coupled human-nature systems, stewardship, transformation, adaptive capacity, system dynamics',
   'Complexity & Modelling':
-    'Complex adaptive systems, agent-based modelling, systems thinking, network analysis, computational modelling, scenario analysis',
+    'Complex adaptive systems, agent-based modelling, systems thinking, network analysis, computational modelling, scenario analysis, feedback loops, interacting complexities',
   'Sustainability Governance':
-    'Sustainability governance, institutions, environmental policy, corporate sustainability, international agreements, environmental law, polycentric governance',
+    'Earth system governance, ocean governance, adaptive governance, environmental institutions, polycentric governance, sustainability transitions, international environmental agreements, transformative governance',
   'Health & Wellbeing':
-    'Human health, wellbeing, food security, water security, disease, public health, nutrition, mental health',
+    'Antimicrobial resistance, One Health, human health outcomes, nature-based health benefits, wellbeing effects of biodiversity and green spaces, disease ecology, public health interventions, mental health and nature connections',
   'Other':
     'Interdisciplinary or unclassified research',
 }
@@ -88,13 +88,9 @@ async function main() {
   const graph: GraphData = JSON.parse(readFileSync(graphPath, 'utf-8'))
   const embeddings: Record<string, number[]> = JSON.parse(readFileSync(embPath, 'utf-8'))
 
-  const toClassify = graph.nodes.filter(n => !n.srcTheme)
-  console.log(`Classifying ${toClassify.length} papers (${graph.nodes.length - toClassify.length} already done)…`)
-
-  if (toClassify.length === 0) {
-    console.log('Nothing to do.')
-    return
-  }
+  // Clear existing srcTheme so all papers are re-classified with the current descriptions
+  const freshNodes = graph.nodes.map(({ srcTheme: _, ...n }) => n) as Paper[]
+  console.log(`Classifying ${freshNodes.length} papers…`)
 
   // Embed the 7 theme descriptions (~7 API calls)
   console.log('Embedding theme descriptions…')
@@ -105,7 +101,7 @@ async function main() {
     process.stdout.write(' done\n')
   }
 
-  const classified = classifyPapers(graph.nodes, embeddings, themeEmbeddings)
+  const classified = classifyPapers(freshNodes, embeddings, themeEmbeddings)
 
   // Log distribution
   const counts = new Map<string, number>()
