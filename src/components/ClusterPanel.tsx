@@ -1,7 +1,7 @@
 import { useAppStore } from '../store/appStore'
 import type { GraphData, Paper } from '../lib/types'
 import { sharedPapers } from '../lib/coauthorGraph'
-import { buildClusterThemeMap, CLUSTER_LABEL_TO_THEME, SRC_THEME_COLORS } from '../lib/srcThemes'
+import { buildClusterThemeMap, SRC_THEME_COLORS } from '../lib/srcThemes'
 import { getClusterName } from '../lib/clusterNames'
 import { ExportButtons } from './ExportButtons'
 
@@ -43,7 +43,7 @@ export function ClusterPanel({ graph }: { graph: GraphData }) {
       <aside className={aside} style={asideStyle}>
         <button onClick={() => setSelectedPaper(null)} className={backBtn} style={backBtnStyle}>← Back</button>
         <h2 className="font-semibold mb-1 text-sm leading-tight" style={{ color: 'var(--text-primary)' }}>{selectedPaper.title}</h2>
-        <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {CLUSTER_LABEL_TO_THEME[selectedPaper.focusArea] ?? selectedPaper.focusArea}</p>
+        <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.year} · {selectedPaper.srcTheme ?? selectedPaper.focusArea}</p>
         {selectedPaper.tldr && <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{selectedPaper.tldr}</p>}
         <div className="flex gap-3 mb-2 text-xs">
           <span style={{ color: '#60A5FA' }}>→ Cites {citesCount}</span>
