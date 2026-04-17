@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function CitationGraph({ graph, focusAreaColors }: Props) {
-  const { setSelectedPaper, selectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas, coauthorPath } = useAppStore()
+  const { setSelectedPaper, selectedPaper, highlightedPath, selectedCluster, searchQuery, hiddenClusterIds, selectedAuthorId, sizeByCitations, theme, minCitations, yearRange, selectedFocusAreas, coauthorPath, setVisibleCounts } = useAppStore()
   const fgRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -92,6 +92,10 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
     )
     return { nodes, links }
   }, [graph, searchQuery, hiddenClusterIds, minCitations, yearRange, selectedFocusAreas])
+
+  useEffect(() => {
+    setVisibleCounts(filteredGraph.nodes.length, filteredGraph.links.length)
+  }, [filteredGraph, setVisibleCounts])
 
   // Directional neighbor sets for selected-paper highlighting
   // citesIds: papers the selected paper cites (outgoing edges from selected)

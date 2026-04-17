@@ -31,6 +31,9 @@ interface AppState {
   setCoauthorNoPath: (v: boolean) => void
   toggleFocusArea: (area: string) => void
   clearFocusAreas: () => void
+  visibleNodeCount: number | null  // null until CitationGraph computes first filtered result
+  visibleEdgeCount: number | null
+  setVisibleCounts: (nodes: number, edges: number) => void
 }
 
 export const useAppStore = create<AppState>(set => ({
@@ -43,10 +46,12 @@ export const useAppStore = create<AppState>(set => ({
   sizeByCitations: false,
   theme: 'dark',
   minCitations: 0,
-  yearRange: [1973, 2026],
+  yearRange: [2007, 2026],
   coauthorPath: [],
   coauthorNoPath: false,
   selectedFocusAreas: [],
+  visibleNodeCount: null,
+  visibleEdgeCount: null,
 
   setSelectedPaper: p => set({ selectedPaper: p }),
   setSelectedCluster: c => set({ selectedCluster: c }),
@@ -72,4 +77,5 @@ export const useAppStore = create<AppState>(set => ({
         : [...s.selectedFocusAreas, area],
     })),
   clearFocusAreas: () => set({ selectedFocusAreas: [] }),
+  setVisibleCounts: (nodes, edges) => set({ visibleNodeCount: nodes, visibleEdgeCount: edges }),
 }))

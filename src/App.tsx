@@ -10,7 +10,7 @@ import { useAppStore } from './store/appStore'
 
 export default function App() {
   const { data, loading, error } = useGraphData()
-  const { theme, toggleTheme } = useAppStore()
+  const { theme, toggleTheme, visibleNodeCount, visibleEdgeCount } = useAppStore()
   const [showCitationFinder, setShowCitationFinder] = useState(false)
 
   if (loading) return (
@@ -40,7 +40,7 @@ export default function App() {
               style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
         <h1 className="font-bold text-lg">SRC Research Nexus</h1>
         <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {data.nodes.length} papers · {data.edges.length} citations
+          {visibleNodeCount ?? data.nodes.length} papers · {visibleEdgeCount ?? data.edges.length} citations
         </span>
         <button
           onClick={() => setShowCitationFinder(v => !v)}
