@@ -44,8 +44,8 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
   useEffect(() => {
     const fg = fgRef.current
     if (!fg) return
-    fg.d3Force('charge')?.strength(-120)
-    fg.d3Force('link')?.distance(60)
+    fg.d3Force('charge')?.strength(-400)
+    fg.d3Force('link')?.distance(80)
   }, [])
 
   const filteredGraph = useMemo(() => {
@@ -195,10 +195,10 @@ export function CitationGraph({ graph, focusAreaColors }: Props) {
           }}
           onNodeClick={(node: any) => setSelectedPaper(node as Paper)}
           backgroundColor={theme === 'dark' ? '#111827' : '#F3F4F6'}
-          warmupTicks={150}
-          cooldownTicks={50}
-          d3AlphaDecay={0.04}
-          d3VelocityDecay={0.4}
+          warmupTicks={300}
+          cooldownTicks={100}
+          d3AlphaDecay={0.02}
+          d3VelocityDecay={0.3}
         />
       )}
     </div>
